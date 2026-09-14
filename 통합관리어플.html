@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>가족 통합 라이프 & 자산 포털</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { background-color: #f8fafc; color: #0f172a; padding-bottom: 70px; font-size: 13px; }
+    
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    table.gsheet {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    table.gsheet th, table.gsheet td {
+      border: 1px solid #e2e8f0;
+      height: 34px;
+      padding: 4px 8px;
+    }
+    .cell-input {
+      width: 100%;
+      height: 28px;
+      border: 1px solid transparent;
+      background: transparent;
+      text-align: right;
+      font-size: 12px;
+      outline: none;
+      padding: 0 4px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .cell-input:focus {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 1px #3b82f6;
+    }
+    .cell-input-text { text-align: left; }
+    .cell-input-center { text-align: center; }
+    .cell-calc {
+      background-color: #f8fafc;
+      color: #334155;
+      user-select: none;
+      cursor: not-allowed;
+    }
+
+    .badge-shift-day { background-color: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-shift-all { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-shift-night { background-color: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
+    .badge-shift-off { background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+    .badge-shift-vacation { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+  </style>
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-layer-group text-sky-400 text-base"></i>
+        <h1 class="font-bold text-sm sm:text-base tracking-tight">가족 통합 라이프 & 자산 포털</h1>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="exportAllData()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+          <i class="fa-solid fa-download"></i> 전체 백업
+        </button>
+        <button onclick="document.getElementById('importFileInput').click()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+          <i class="fa-solid fa-upload"></i> 복원
+        </button>
+        <input type="file" id="importFileInput" style="display:none" onchange="importAllData(event)" accept=".json">
+      </div>
+    </div>
+
+    <!-- 네비게이션 탭 (성경일독 첫 번째 배치) -->
+    <nav class="bg-slate-800 border-t border-slate-700 overflow-x-auto no-scrollbar flex text-xs sm:text-sm font-medium">
+      <button class="tab-nav-btn px-4 py-2.5 border-b-2 border-sky-400 text-sky-400 whitespace-nowrap font-bold flex items-center gap-1.5" onclick="switchGlobalTab('tab-bible', this)">
+        <i class="fa-solid fa-book-bible"></i> 성경일독
+      </button>
+      <button class="tab-nav-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap flex items-center gap-1.5" onclick="switchGlobalTab('tab-finance', this)">
+        <i class="fa-solid fa-chart-line"></i> ETF·자산관리
+      </button>
+      <button class="tab-nav-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap flex items-center gap-1.5" onclick="switchGlobalTab('tab-kids', this)">
+        <i class="fa-solid fa-children"></i> 자녀 일과·출석집계
+      </button>
+      <button class="tab-nav-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap flex items-center gap-1.5" onclick="switchGlobalTab('tab-card', this)">
+        <i class="fa-solid fa-credit-card"></i> 카드실적·짭모아·공과금
+      </button>
+      <button class="tab-nav-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap flex items-center gap-1.5" onclick="switchGlobalTab('tab-shift', this)">
+        <i class="fa-solid fa-calendar-check"></i> 교대근무·수당(단가적용)
+      </button>
+      <button class="tab-nav-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap flex items-center gap-1.5" onclick="switchGlobalTab('tab-fixed', this)">
+        <i class="fa-solid fa-list-check"></i> 고정비·만기일정
+      </button>
+      <button class="tab-nav-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap flex items-center gap-1.5" onclick="switchGlobalTab('tab-insurance', this)">
+        <i class="fa-solid fa-shield-halved"></i> 가족보험
+      </button>
+    </nav>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-3 sm:p-4">
+
+    <!-- ============================================================== -->
+    <!-- 1. 성경 일독 탭 (첫 화면) -->
+    <!-- ============================================================== -->
+    <section id="tab-bible" class="tab-panel space-y-4">
+      <div class="max-w-md mx-auto bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3.5">
+        <div class="flex items-center justify-between bg-slate-50 border rounded-lg p-2.5">
+          <button onclick="changeBibleDay(-1)" class="px-2.5 py-1 text-xs bg-white border rounded">◀ 이전</button>
+          <div id="bibleDateLabel" class="font-bold text-xs text-slate-800"></div>
+          <button onclick="changeBibleDay(1)" class="px-2.5 py-1 text-xs bg-white border rounded">다음 ▶</button>
+        </div>
+
+        <div class="border rounded-lg p-3">
+          <div class="flex justify-between items-center border-b pb-1.5 mb-2">
+            <span class="font-bold text-xs text-blue-700">구약 (3장)</span>
+            <span id="bibleOtRange" class="text-[11px] text-slate-400"></span>
+          </div>
+          <div id="bibleOtList" class="space-y-2"></div>
+        </div>
+
+        <div class="border rounded-lg p-3">
+          <div class="flex justify-between items-center border-b pb-1.5 mb-2">
+            <span class="font-bold text-xs text-blue-700">신약 (1장)</span>
+            <span id="bibleNtRange" class="text-[11px] text-slate-400"></span>
+          </div>
+          <div id="bibleNtList" class="space-y-2"></div>
+        </div>
+
+        <button onclick="toggleAllBibleToday()" class="w-full py-2 bg-blue-600 text-white rounded-lg text-xs font-bold">오늘 분량 일괄 완료</button>
+        <div id="bibleInfoStats" class="text-[11px] text-slate-400 text-center"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 2. ETF 및 자산관리 탭 (현재단가 일괄 마스터 바 탑재) -->
+    <!-- ============================================================== -->
+    <section id="tab-finance" class="tab-panel hidden space-y-5">
+      <div class="bg-slate-900 text-white p-4 rounded-xl flex justify-between items-center flex-wrap gap-4 shadow">
+        <div>
+          <div class="text-xs text-slate-400">가족 순금융자산 합계 (부동산 제외)</div>
+          <div class="text-xl sm:text-2xl font-black text-sky-400 mt-0.5" id="grandNetAsset">₩0</div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-400">가족 총자산 (부동산 포함)</div>
+          <div class="text-base sm:text-lg font-bold text-slate-100" id="grandTotalAsset">₩0</div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-400">대출금 총합</div>
+          <div class="text-base sm:text-lg font-bold text-rose-400" id="grandTotalLoan">-₩0</div>
+        </div>
+      </div>
+
+      <!-- ETF 마스터 단가 일괄 적용 바 (중복 3~4개 종목 한번에 수정) -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 shadow-sm space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="font-bold text-xs text-blue-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt text-amber-500"></i> ETF 기준 현재단가 일괄 적용 (여기서 수정 시 전 계좌 동시 반영)
+          </span>
+          <span class="text-[11px] text-blue-600 font-semibold">* 단가 입력 즉시 모든 계좌 재연산</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs" id="masterEtfPriceInputs">
+          <!-- JS 자동 렌더링 -->
+        </div>
+      </div>
+
+      <!-- 가족 종합 현황표 -->
+      <div class="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
+        <div class="bg-amber-100/80 border-b border-slate-200 px-4 py-2.5 font-bold text-xs text-slate-800 flex justify-between items-center">
+          <span>■ 가족 자산 총괄 현황표 (수정 가능 / 수식 자동 계산)</span>
+          <button onclick="addOverviewRow()" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">+ 행 추가</button>
+        </div>
+        <div class="table-responsive">
+          <table class="gsheet min-w-[950px]">
+            <colgroup>
+              <col style="width: 100px;"><col style="width: 95px;"><col style="width: 95px;"><col style="width: 95px;"><col style="width: 95px;"><col style="width: 90px;"><col style="width: 95px;"><col style="width: 100px;"><col style="width: 95px;"><col style="width: 110px;"><col style="width: 50px;">
+            </colgroup>
+            <thead>
+              <tr class="bg-slate-50 text-slate-700 text-center font-bold">
+                <th>이름</th><th>주식</th><th>ISA</th><th>세공연금</th><th>비세공연금</th><th>IRP</th><th>퇴직수당/적금</th><th>부동산</th><th>대출</th><th class="cell-calc">합계 (수식)</th><th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="overviewTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 개인별 계좌 ETF 종목 현황 -->
+      <div class="space-y-3">
+        <div class="font-bold text-sm text-slate-900 border-l-4 border-blue-600 pl-2.5">개인별 계좌 ETF 종목·수량·단가 현황</div>
+        <div id="holdingsContainer" class="space-y-4"></div>
+      </div>
+
+      <!-- 월말 결산 히스토리 -->
+      <div class="space-y-3">
+        <div class="font-bold text-sm text-slate-900 border-l-4 border-blue-600 pl-2.5">월말 결산 히스토리 (2026년 전체)</div>
+        <div id="monthlyHistoryContainer" class="space-y-4"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 3. 자녀 일과·출석집계 탭 (일주일 전체 일과표 추가 & (시간순) 삭제) -->
+    <!-- ============================================================== -->
+    <section id="tab-kids" class="tab-panel hidden space-y-4">
+      <div class="max-w-4xl mx-auto space-y-4">
+        <div class="flex bg-slate-200 p-1 rounded-xl text-xs font-bold">
+          <button onclick="switchKidsSubTab('weektable')" id="btnKidsSubWeekTable" class="flex-1 py-2 bg-white text-blue-600 rounded-lg shadow-sm">일주일 전체 일과표</button>
+          <button onclick="switchKidsSubTab('check')" id="btnKidsSubCheck" class="flex-1 py-2 text-slate-600">일일 출석 체크</button>
+          <button onclick="switchKidsSubTab('summary')" id="btnKidsSubSummary" class="flex-1 py-2 text-slate-600">월별 출석 집계</button>
+          <button onclick="switchKidsSubTab('manage')" id="btnKidsSubManage" class="flex-1 py-2 text-slate-600">일과 및 대상 관리</button>
+        </div>
+
+        <!-- 3-1. 일주일 전체 일과표 (종합 뷰) -->
+        <div id="kidsWeekTableSubView" class="space-y-3">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+              <span class="font-bold text-sm text-slate-800">일주일 종합 시간표 (월~일)</span>
+              <span class="text-xs text-slate-500">라희 & 도윤 전체 일과</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-7 gap-2" id="kidsFullWeekGrid">
+              <!-- JS 생성 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-2. 일일 출석 체크 -->
+        <div id="kidsCheckSubView" class="hidden space-y-3">
+          <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+            <button onclick="changeKidsDate(-1)" class="px-3 py-1 bg-slate-100 rounded text-xs hover:bg-slate-200 font-semibold">◀ 이전 날</button>
+            <div id="kidsDateDisplay" class="font-bold text-sm text-slate-800"></div>
+            <button onclick="changeKidsDate(1)" class="px-3 py-1 bg-slate-100 rounded text-xs hover:bg-slate-200 font-semibold">다음 날 ▶</button>
+          </div>
+          <div id="kidsCheckTargetContainers" class="space-y-3"></div>
+        </div>
+
+        <!-- 3-3. 월별 출석 집계 -->
+        <div id="kidsSummarySubView" class="hidden space-y-4">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+              <span class="font-bold text-sm text-slate-800" id="kidsMonthSummaryTitle">과목별 출석 현황</span>
+              <span class="text-xs text-slate-500">당월 총 출석 합산</span>
+            </div>
+            <div id="kidsMonthSummaryGrid" class="space-y-4"></div>
+          </div>
+        </div>
+
+        <!-- 3-4. 일과 및 대상 관리 -->
+        <div id="kidsManageSubView" class="hidden space-y-4">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2.5">
+            <div class="font-bold text-xs text-slate-800 border-b pb-1.5 flex justify-between items-center">
+              <span>가족 / 자녀 대상 목록 관리</span>
+              <button onclick="addNewKidTarget()" class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-200 font-bold">+ 새 대상 추가</button>
+            </div>
+            <div id="kidsTargetBadgeList" class="flex flex-wrap gap-2 text-xs"></div>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="font-bold text-xs text-slate-800 border-b pb-2 flex justify-between items-center">
+              <span id="kidsFormTitle">새 과목 / 일과 등록</span>
+              <button onclick="resetKidsForm()" class="text-xs text-slate-400 hover:text-slate-600">입력 초기화</button>
+            </div>
+            <input type="hidden" id="kidsEditKey" value="">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">대상 선택</label>
+                <select id="kidsInputKid" class="w-full border rounded-lg p-2 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">과목 / 일정명</label>
+                <input type="text" id="kidsInputName" placeholder="예: 피아노, 오케스트라, 수영" class="w-full border rounded-lg p-2 text-xs">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">진행 요일별 시간 지정 (체크 후 시간 입력)</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
+                <div class="flex items-center gap-2">
+                  <label class="w-12 flex items-center gap-1 font-bold cursor-pointer"><input type="checkbox" id="chk_d_1"> 월</label>
+                  <input type="text" id="time_d_1" placeholder="예: 16:20~17:20" class="flex-1 border rounded p-1 text-xs">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="w-12 flex items-center gap-1 font-bold cursor-pointer"><input type="checkbox" id="chk_d_2"> 화</label>
+                  <input type="text" id="time_d_2" placeholder="예: 16:20~17:20" class="flex-1 border rounded p-1 text-xs">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="w-12 flex items-center gap-1 font-bold cursor-pointer"><input type="checkbox" id="chk_d_3"> 수</label>
+                  <input type="text" id="time_d_3" placeholder="예: 15:50~16:50" class="flex-1 border rounded p-1 text-xs">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="w-12 flex items-center gap-1 font-bold cursor-pointer"><input type="checkbox" id="chk_d_4"> 목</label>
+                  <input type="text" id="time_d_4" placeholder="예: 16:20~17:20" class="flex-1 border rounded p-1 text-xs">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="w-12 flex items-center gap-1 font-bold cursor-pointer"><input type="checkbox" id="chk_d_5"> 금</label>
+                  <input type="text" id="time_d_5" placeholder="예: 16:20~17:20" class="flex-1 border rounded p-1 text-xs">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="w-12 flex items-center gap-1 font-bold cursor-pointer"><input type="checkbox" id="chk_d_6"> 토</label>
+                  <input type="text" id="time_d_6" placeholder="예: 09:00~11:40" class="flex-1 border rounded p-1 text-xs">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="w-12 flex items-center gap-1 font-bold cursor-pointer"><input type="checkbox" id="chk_d_0"> 일</label>
+                  <input type="text" id="time_d_0" placeholder="예: 14:00~15:00" class="flex-1 border rounded p-1 text-xs">
+                </div>
+              </div>
+            </div>
+
+            <button onclick="saveKidsSubject()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition">일정 저장 / 추가</button>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <div class="font-bold text-xs text-slate-800 border-b pb-2">등록된 전체 일과 목록</div>
+            <div id="kidsRegisteredList" class="space-y-1.5 max-h-96 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- 4. 카드 관리 탭 (일자별 출금 먼저 표출) -->
+    <!-- ============================================================== -->
+    <section id="tab-card" class="tab-panel hidden space-y-4">
+      <div class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex gap-1 text-xs font-bold">
+          <button onclick="switchCardViewMode('daywise')" id="btnDaywiseView" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg shadow-sm">📅 일자별 출금 체크</button>
+          <button onclick="switchCardViewMode('cardwise')" id="btnCardwiseView" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg">💳 카드/수단별 실적 스케줄</button>
+        </div>
+        <div class="flex gap-1">
+          <button onclick="openAddScheduleModal()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-bold">+ 일정 추가</button>
+          <button onclick="resetScheduleChecks()" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded-lg">체크 초기화</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 space-y-3">
+          <!-- 일자별 단순 리스트 뷰 (기본 먼저 표출) -->
+          <div id="daywiseContainer" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div id="daywiseScheduleList" class="space-y-2 max-h-[650px] overflow-y-auto pr-1"></div>
+          </div>
+
+          <!-- 카드별 그룹 뷰 -->
+          <div id="cardwiseContainer" class="hidden space-y-3"></div>
+        </div>
+
+        <div class="space-y-4">
+          <!-- 짭모아 70회 -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
+              <div class="text-xs font-bold text-amber-700">신한 카카오뱅크(짭모아) 5천원 이상 결제</div>
+              <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden my-2">
+                <div id="splitProgressBar" class="bg-amber-400 h-full rounded-full transition-all" style="width:0%"></div>
+              </div>
+              <div class="text-base font-extrabold text-slate-800">
+                달성: <span id="splitCurrentCnt" class="text-rose-600">0</span> / 70회 (<span id="splitPercentVal">0</span>%)
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5">* 70회 달성 시 50,000원 캐시백</div>
+            </div>
+            <div id="splitListContainer" class="space-y-3 max-h-[380px] overflow-y-auto pr-1"></div>
+          </div>
+
+          <!-- 공과금 기재란 -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2.5">
+            <div class="border-b pb-1.5">
+              <h3 class="font-bold text-xs text-slate-800">동별 공과금 및 계량기 수치</h3>
+              <div class="text-[11px] text-slate-400">도시가스(1~말일) / 전기(전전월 17~전월 16)</div>
+            </div>
+            <div id="utilityListContainer" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 카드 일정 편집 모달 -->
+    <div id="cardScheduleModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-2xl p-4 shadow-xl space-y-3">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h3 id="cardScheduleModalTitle" class="font-bold text-sm text-slate-800">카드 일정 수정</h3>
+          <button onclick="closeCardScheduleModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <input type="hidden" id="cardEditScheduleId" value="">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">매월 결제/출금일 (1~31)</label>
+          <input type="number" id="cardInputDay" min="1" max="31" class="w-full border rounded p-2 text-xs font-bold">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">카드 / 수단 분류</label>
+          <input type="text" id="cardInputGroup" placeholder="예: 신한 짭모아, LG헬로 롯데, MG하나 등" class="w-full border rounded p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">항목명</label>
+          <input type="text" id="cardInputName" placeholder="예: SKT 요금 선결제" class="w-full border rounded p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">상세 내용 (금액 / 실적조건 등)</label>
+          <input type="text" id="cardInputDetail" placeholder="예: ₩137,400 (짭모아 10회 분할)" class="w-full border rounded p-2 text-xs">
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeCardScheduleModal()" class="flex-1 py-2 text-xs bg-slate-100 rounded-lg">취소</button>
+          <button onclick="saveCardScheduleItem()" class="flex-1 py-2 text-xs bg-blue-600 text-white font-bold rounded-lg">저장하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- 5. 교대근무 및 수당 정산 탭 -->
+    <!-- ============================================================== -->
+    <section id="tab-shift" class="tab-panel hidden space-y-4">
+      <div class="max-w-md mx-auto space-y-3.5">
+        <div class="flex justify-between items-center">
+          <div class="bg-white rounded-xl p-2.5 shadow-sm border border-slate-200 flex-1 flex items-center justify-between text-xs text-slate-600 mr-2">
+            <span class="font-bold text-slate-800"><i class="fa-solid fa-repeat text-indigo-500"></i> 주기:</span>
+            <div class="flex items-center gap-1 font-semibold">
+              <span class="px-1.5 py-0.5 rounded badge-shift-day text-[11px]">주간</span>
+              <span class="px-1.5 py-0.5 rounded badge-shift-all text-[11px]">올</span>
+              <span class="px-1.5 py-0.5 rounded badge-shift-off text-[11px]">휴</span>
+              <span class="px-1.5 py-0.5 rounded badge-shift-off text-[11px]">휴</span>
+              <span class="px-1.5 py-0.5 rounded badge-shift-night text-[11px]">야간</span>
+              <span class="px-1.5 py-0.5 rounded badge-shift-off text-[11px]">휴</span>
+            </div>
+          </div>
+          <button onclick="openShiftSettingsModal()" class="p-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-sm flex items-center gap-1">
+            <i class="fa-solid fa-gear"></i> 단가설정
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div>
+              <span class="text-xs font-semibold text-slate-400">총 예상 수당 지급액</span>
+              <div class="text-2xl font-extrabold text-slate-900 tracking-tight" id="shiftTotalAmount">0원</div>
+            </div>
+            <div class="text-right">
+              <span class="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded-full border border-blue-200">단가 적용 완료</span>
+              <div class="text-xs font-bold text-slate-500 mt-1" id="shiftMonthStatus">2026년 9월</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
+            <div class="flex justify-between items-center text-slate-600">
+              <span>기본 근무 시간외 <span class="text-[10px] text-slate-400">(올·야간·휴일주간 등)</span></span>
+              <span class="font-bold text-slate-800" id="shiftBaseOtHours">0시간</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-600">
+              <span>사전 모임 적립 시간 <span class="text-[10px] text-slate-400" id="shiftMeetingDetailLabel">(총 0분)</span></span>
+              <span class="font-bold text-indigo-600" id="shiftMeetingOtHours">+0시간</span>
+            </div>
+            <div class="pt-1.5 border-t border-slate-200 flex justify-between items-center font-bold">
+              <span class="text-slate-800">최종 정산 시간외 합계</span>
+              <span class="text-blue-600 text-sm" id="shiftNetOtHours">0시간</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center pt-1">
+            <div class="bg-blue-50/70 p-2 rounded-xl border border-blue-100">
+              <div class="text-[11px] font-semibold text-blue-600" id="labelOtRate">시간외 (12,368원)</div>
+              <div class="text-sm font-bold text-slate-800 mt-0.5" id="shiftSumOtHours">0h</div>
+              <div class="text-[11px] font-medium text-slate-500 mt-0.5" id="shiftSumOtPay">0원</div>
+            </div>
+            <div class="bg-purple-50/70 p-2 rounded-xl border border-purple-100">
+              <div class="text-[11px] font-semibold text-purple-600" id="labelNightRate">야간 (4,123원)</div>
+              <div class="text-sm font-bold text-slate-800 mt-0.5" id="shiftSumNightHours">0h</div>
+              <div class="text-[11px] font-medium text-slate-500 mt-0.5" id="shiftSumNightPay">0원</div>
+            </div>
+            <div class="bg-amber-50/70 p-2 rounded-xl border border-amber-100">
+              <div class="text-[11px] font-semibold text-amber-700" id="labelHolidayRate">휴일 (99,422원)</div>
+              <div class="text-sm font-bold text-slate-800 mt-0.5" id="shiftSumHolidayCount">0일</div>
+              <div class="text-[11px] font-medium text-slate-500 mt-0.5" id="shiftSumHolidayPay">0원</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-3 px-1">
+            <div class="flex items-center gap-2">
+              <button onclick="changeShiftMonth(-1)" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 active:scale-95 transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+              <span id="shiftCalendarTitle" class="text-base font-extrabold text-slate-800">2026년 9월</span>
+              <button onclick="changeShiftMonth(1)" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 active:scale-95 transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+            </div>
+            <button onclick="goToShiftToday()" class="text-xs font-semibold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 transition">오늘</button>
+          </div>
+          <div class="grid grid-cols-7 text-center text-xs font-bold text-slate-400 mb-2">
+            <span class="text-red-500">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="text-blue-500">토</span>
+          </div>
+          <div id="shiftCalendarGrid" class="grid grid-cols-7 gap-1"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 교대 단가 모달 -->
+    <div id="shiftSettingsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-2xl p-4 shadow-xl space-y-3">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h3 class="font-bold text-sm text-slate-800">교대근무 수당 단가 수정</h3>
+          <button onclick="closeShiftSettingsModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">시간외근무수당 단가 (원)</label>
+          <input type="number" id="inputRateOt" class="w-full border rounded p-2 text-xs font-bold">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">야간근무수당 단가 (원)</label>
+          <input type="number" id="inputRateNight" class="w-full border rounded p-2 text-xs font-bold">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">휴일근무수당 단가 (원)</label>
+          <input type="number" id="inputRateHoliday" class="w-full border rounded p-2 text-xs font-bold">
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeShiftSettingsModal()" class="flex-1 py-2 text-xs bg-slate-100 rounded-lg">취소</button>
+          <button onclick="saveShiftRates()" class="flex-1 py-2 text-xs bg-blue-600 text-white font-bold rounded-lg">저장하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 20분 가감 모달 -->
+    <div id="shiftDayModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-2xl p-4 shadow-xl space-y-4">
+        <div class="flex items-center justify-between border-b pb-2">
+          <h3 id="shiftModalDateTitle" class="font-bold text-sm text-slate-800">날짜 근무 및 모임 설정</h3>
+          <button onclick="closeShiftDayModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">근무 형태 변경</label>
+          <div class="grid grid-cols-5 gap-1.5 text-xs font-bold">
+            <button onclick="setModalShift('DAY')" class="py-2 rounded-lg badge-shift-day text-center">주간</button>
+            <button onclick="setModalShift('ALL')" class="py-2 rounded-lg badge-shift-all text-center">올(24h)</button>
+            <button onclick="setModalShift('NIGHT')" class="py-2 rounded-lg badge-shift-night text-center">야간</button>
+            <button onclick="setModalShift('OFF')" class="py-2 rounded-lg badge-shift-off text-center">휴</button>
+            <button onclick="setModalShift('VACATION')" class="py-2 rounded-lg badge-shift-vacation text-center">연가</button>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 space-y-2">
+          <label class="block text-xs font-bold text-amber-900">출근 사전 모임 시간 (분)</label>
+          <div class="flex items-center gap-2">
+            <button onclick="adjustMeetingMinutes(-20)" class="px-2.5 py-1.5 bg-white border border-amber-300 rounded font-bold text-xs text-amber-800">-20분</button>
+            <input type="number" id="shiftModalMeetingInput" class="w-20 text-center font-extrabold border border-amber-300 rounded p-1 text-sm bg-white" step="5" min="0">
+            <button onclick="adjustMeetingMinutes(20)" class="px-2.5 py-1.5 bg-white border border-amber-300 rounded font-bold text-xs text-amber-800">+20분</button>
+          </div>
+          <p class="text-[11px] text-amber-700">* 기본 출근일 20분 적립되며 누적 60분당 시간외 1시간이 가산됩니다.</p>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button onclick="resetModalShiftToCycle()" class="flex-1 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">주기 복원</button>
+          <button onclick="saveShiftDayModal()" class="flex-1 py-2 text-xs font-bold text-white bg-blue-600 rounded-lg">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. 고정비 관리 탭 -->
+    <section id="tab-fixed" class="tab-panel hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex justify-between items-center gap-3">
+          <input type="text" id="fixedSearchInput" oninput="renderFixedList()" placeholder="항목명, 비고 실시간 검색..." class="w-full max-w-sm px-3 py-1.5 border rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500">
+          <button onclick="openAddFixedModal()" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold whitespace-nowrap">+ 일정 추가</button>
+        </div>
+        <div id="fixedListContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
+    </section>
+
+    <!-- 7. 가족 보험 탭 -->
+    <section id="tab-insurance" class="tab-panel hidden space-y-4">
+      <div class="max-w-xl mx-auto space-y-3">
+        <div class="flex justify-between items-center">
+          <div class="flex gap-1.5 overflow-x-auto pb-1" id="insuranceTabs">
+            <button class="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white" onclick="filterInsurance('전체')">전체</button>
+            <button class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white border text-slate-600" onclick="filterInsurance('김훤')">김훤</button>
+            <button class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white border text-slate-600" onclick="filterInsurance('신해미')">신해미</button>
+            <button class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white border text-slate-600" onclick="filterInsurance('김라희')">김라희</button>
+            <button class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white border text-slate-600" onclick="filterInsurance('김도윤')">김도윤</button>
+          </div>
+          <button onclick="openAddInsuranceModal()" class="px-2.5 py-1 text-xs bg-blue-600 text-white font-bold rounded-lg whitespace-nowrap">+ 보험 추가</button>
+        </div>
+        <div id="insuranceCards" class="space-y-3"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // 통합 마스터 기본 데이터
+    const DEFAULT_MASTER = {
+      shiftState: {
+        syncDate: '2026-09-01',
+        syncCycleIndex: 0,
+        rateOt: 12368,
+        rateNight: 4123,
+        rateHoliday: 99422,
+        vacationTotal: 22,
+        vacationBaseUsed: 14,
+        customDays: {}
+      },
+      // 핵심 중복 ETF 마스터 단가 (여기서 수정 시 전 계좌 일괄 반영)
+      masterEtfPrices: {
+        "ACE 미국S&P500": 25920,
+        "TIGER 미국테크TOP10 INDXX": 30240,
+        "SOL 미국배당다우존스": 13445,
+        "TIGER 미국배당다우존스": 14635
+      },
+      finance: {
+        overview: [
+          { name: "김훤 (본인)", stock: 30032800, isa: 18673511, pen1: 61533369, pen2: 96673263, irp: 6429601, ret: 23406370, estate: 435000000, loan: -228100000 },
+          { name: "김연표 (아버지)", stock: 13376482, isa: 20576202, pen1: 0, pen2: 0, irp: 0, ret: 70000000, estate: 196000000, loan: 0 },
+          { name: "신해미 (배우자)", stock: 0, isa: 0, pen1: 0, pen2: 40000000, irp: 15846066, ret: 3767085, estate: 0, loan: 0 },
+          { name: "김라희 (자녀)", stock: 42529135, isa: 0, pen1: 0, pen2: 0, irp: 0, ret: 0, estate: 0, loan: 0 },
+          { name: "김도윤 (자녀)", stock: 45671882, isa: 0, pen1: 0, pen2: 0, irp: 0, ret: 0, estate: 0, loan: 0 }
+        ],
+        accounts: [
+          {
+            owner: "김훤 (본인)", title: "위탁종합 (키움 4657)", theme: "",
+            items: [
+              { name: "TIGER 미국테크TOP10 INDXX", type: "미국주식", buyPrice: 33689, qty: 992, curPrice: 30275 },
+              { name: "예수금(현금)", type: "현금", buyPrice: 1, qty: 0, curPrice: 1 }
+            ]
+          },
+          {
+            owner: "김훤 (본인)", title: "ISA계좌 (키움 4890)", theme: "",
+            items: [
+              { name: "SOL 미국배당다우존스", type: "미국주식", buyPrice: 14497, qty: 1389, curPrice: 13440 },
+              { name: "예수금(현금)", type: "현금", buyPrice: 1, qty: 5351, curPrice: 1 }
+            ]
+          },
+          {
+            owner: "김훤 (본인)", title: "연금저축계좌(세공) (키움 3183)", theme: "",
+            items: [
+              { name: "ACE 미국S&P500", type: "미국주식", buyPrice: 24906, qty: 705, curPrice: 25915 },
+              { name: "TIGER 미국테크TOP10 INDXX", type: "미국주식", buyPrice: 28865, qty: 826, curPrice: 30245 },
+              { name: "SOL 미국배당다우존스", type: "미국주식", buyPrice: 13333, qty: 1359, curPrice: 13450 },
+              { name: "예수금(현금)", type: "현금", buyPrice: 1, qty: 2374, curPrice: 1 }
+            ]
+          },
+          {
+            owner: "김훤 (본인)", title: "연금저축계좌(비세공) (키움 7433)", theme: "",
+            items: [
+              { name: "ACE 미국S&P500", type: "미국주식", buyPrice: 26785, qty: 1129, curPrice: 25920 },
+              { name: "TIGER 미국테크TOP10 INDXX", type: "미국주식", buyPrice: 32598, qty: 1223, curPrice: 30240 },
+              { name: "SOL 미국배당다우존스", type: "미국주식", buyPrice: 13340, qty: 2260, curPrice: 13460 },
+              { name: "예수금(현금)", type: "현금", buyPrice: 1, qty: 6463, curPrice: 1 }
+            ]
+          },
+          {
+            owner: "김라희 (자녀)", title: "일반주식위탁 (키움 7758)", theme: "bg-indigo-50",
+            items: [
+              { name: "ACE 미국S&P500", type: "미국주식", buyPrice: 25738, qty: 498, curPrice: 25905 },
+              { name: "TIGER 미국테크TOP10 INDXX", type: "미국주식", buyPrice: 30454, qty: 687, curPrice: 30235 },
+              { name: "SOL 미국배당다우존스", type: "미국주식", buyPrice: 13404, qty: 658, curPrice: 13445 },
+              { name: "예수금(현금)", type: "현금", buyPrice: 1, qty: 10190, curPrice: 1 }
+            ]
+          },
+          {
+            owner: "김도윤 (자녀)", title: "일반주식위탁 (키움 7769)", theme: "bg-indigo-50",
+            items: [
+              { name: "ACE 미국S&P500", type: "미국주식", buyPrice: 25784, qty: 536, curPrice: 25900 },
+              { name: "TIGER 미국테크TOP10 INDXX", type: "미국주식", buyPrice: 30586, qty: 742, curPrice: 30230 },
+              { name: "SOL 미국배당다우존스", type: "미국주식", buyPrice: 13358, qty: 696, curPrice: 13445 },
+              { name: "예수금(현금)", type: "현금", buyPrice: 1, qty: 1102, curPrice: 1 }
+            ]
+          },
+          {
+            owner: "김연표 (아버지)", title: "ISA계좌 (키움 0655)", theme: "bg-amber-50",
+            items: [
+              { name: "TIGER 미국배당다우존스", type: "미국주식", buyPrice: 14404, qty: 1405, curPrice: 14635 },
+              { name: "SOL 미국배당다우존스", type: "미국주식", buyPrice: 13430, qty: 1, curPrice: 13420 },
+              { name: "예수금(현금)", type: "현금", buyPrice: 1, qty: 607, curPrice: 1 }
+            ]
+          },
+          {
+            owner: "김연표 (아버지)", title: "일반위탁종합 (키움 8579)", theme: "bg-amber-50",
+            items: [
+              { name: "ACE 미국S&P500", type: "미국주식", buyPrice: 26503, qty: 155, curPrice: 26391 },
+              { name: "TIGER 미국테크TOP10 INDXX", type: "미국주식", buyPrice: 32327, qty: 192, curPrice: 30240 },
+              { name: "SOL 미국배당다우존스", type: "미국주식", buyPrice: 13494, qty: 259, curPrice: 13431 },
+              { name: "예수금(현금)", type: "현금", buyPrice: 1, qty: 1077, curPrice: 1 }
+            ]
+          }
+        ],
+        monthly: {
+          "김훤 (본인)": {
+            cols: ["주식", "ISA", "세공연저", "비세공연저", "IRP"],
+            rows: [
+              { m: "2026-01", vals: [28635000, 84928312, 58626471, 0, 6125783], in: 0 },
+              { m: "2026-02", vals: [19635000, 91148963, 58710874, 9026245, 6221384], in: 9000000 },
+              { m: "2026-03", vals: [34990837, 88026068, 59055307, 9092154, 5975675], in: 16500000 },
+              { m: "2026-04", vals: [37823083, 90460606, 63553558, 9975911, 6420999], in: 4000000 },
+              { m: "2026-05", vals: [42278759, 22992, 68257883, 106976700, 6884613], in: 0 },
+              { m: "2026-06", vals: [30286254, 19886202, 66604265, 104620120, 6892570], in: 7111437 },
+              { m: "2026-07", vals: [30308962, 19203019, 62780928, 98654064, 6092141], in: 1937694 },
+              { m: "2026-08", vals: [30404800, 19197449, 62716223, 98536193, 6446056], in: 0 },
+              { m: "2026-10", vals: [30032800, 18673511, 61533369, 96673263, 6429601], in: 0 }
+            ]
+          },
+          "김라희 (자녀)": {
+            cols: ["주식", "키움주식", "개인연금"],
+            rows: [
+              { m: "2026-01", vals: [21226146, 437825, 19221315], in: 0 },
+              { m: "2026-02", vals: [8135810, 13943951, 18731666], in: 0 },
+              { m: "2026-03", vals: [0, 21976466, 18831184], in: 0 },
+              { m: "2026-04", vals: [0, 44077551, 0], in: 0 },
+              { m: "2026-05", vals: [0, 47540315, 0], in: 130000 },
+              { m: "2026-06", vals: [0, 46038849, 0], in: 0 },
+              { m: "2026-07", vals: [0, 43290300, 0], in: 0 },
+              { m: "2026-08", vals: [0, 43355508, 0], in: 50000 },
+              { m: "2026-10", vals: [0, 42529135, 0], in: 0 }
+            ]
+          },
+          "김도윤 (자녀)": {
+            cols: ["주식", "키움주식", "개인연금"],
+            rows: [
+              { m: "2026-01", vals: [9017932, 15292630, 19906938], in: 0 },
+              { m: "2026-02", vals: [0, 24379808, 19355018], in: 0 },
+              { m: "2026-03", vals: [0, 24501521, 19467804], in: 0 },
+              { m: "2026-04", vals: [0, 47365199, 0], in: 0 },
+              { m: "2026-05", vals: [0, 51078967, 0], in: 130000 },
+              { m: "2026-06", vals: [0, 49452888, 0], in: 0 },
+              { m: "2026-07", vals: [0, 46496932, 0], in: 0 },
+              { m: "2026-08", vals: [0, 46560707, 0], in: 50000 },
+              { m: "2026-10", vals: [0, 45671882, 0], in: 0 }
+            ]
+          },
+          "김연표 (아버지)": {
+            cols: ["주식", "ISA", "적금"],
+            rows: [
+              { m: "2026-03", vals: [10000000, 20000000, 70000000], in: 0 },
+              { m: "2026-04", vals: [10276898, 20531775, 70000000], in: 0 },
+              { m: "2026-05", vals: [11906892, 21635967, 70000000], in: 862583 },
+              { m: "2026-06", vals: [12576239, 21957969, 70000000], in: 937580 },
+              { m: "2026-07", vals: [12740423, 21227267, 70000000], in: 937580 },
+              { m: "2026-08", vals: [13632877, 21179502, 70000000], in: 937580 },
+              { m: "2026-10", vals: [13376482, 20576202, 70000000], in: 0 }
+            ]
+          }
+        }
+      },
+      kids: {
+        targets: [
+          { id: "rahee", name: "라희", color: "text-rose-600", border: "border-rose-500", badgeBg: "bg-rose-50" },
+          { id: "doyoon", name: "도윤", color: "text-sky-600", border: "border-sky-500", badgeBg: "bg-sky-50" }
+        ],
+        subjects: {
+          rahee_gayageum: { kid: "rahee", name: "가야금", schedule: { 2: "08:10~08:50", 3: "08:10~08:50" } },
+          rahee_orch: { kid: "rahee", name: "오케스트라", schedule: { 3: "14:30~15:30", 6: "09:00~11:40" } },
+          rahee_craft: { kid: "rahee", name: "공예", schedule: { 1: "14:30~15:15", 5: "14:30~15:15" } },
+          rahee_hanja: { kid: "rahee", name: "한자", schedule: { 2: "15:20~16:05", 4: "15:20~16:05" } },
+          rahee_flute: { kid: "rahee", name: "플루트", schedule: { 1: "15:20~16:05", 5: "15:20~16:05" } },
+          rahee_piano: { kid: "rahee", name: "피아노", schedule: { 1: "16:20~17:20", 2: "16:20~17:20", 3: "15:50~16:50", 4: "16:20~17:20", 5: "16:20~17:20" } },
+          rahee_essay: { kid: "rahee", name: "논술", schedule: { 3: "17:00~18:00" } },
+          rahee_art: { kid: "rahee", name: "미술", schedule: { 1: "17:40~18:40", 3: "17:50~18:40" } },
+          rahee_swim: { kid: "rahee", name: "수영", schedule: { 2: "19:00~20:00", 4: "19:00~20:00" } },
+
+          doyoon_kamibot: { kid: "doyoon", name: "AI카미봇B", schedule: { 6: "11:00~13:00" } },
+          doyoon_swim: { kid: "doyoon", name: "수영", schedule: { 6: "12:30~13:30" } },
+          doyoon_art: { kid: "doyoon", name: "미술", schedule: { 1: "15:20~16:15", 2: "15:20~16:15" } },
+          doyoon_chelin: { kid: "doyoon", name: "첼린", schedule: { 3: "15:20~16:00", 5: "15:20~16:00" } },
+          doyoon_piano: { kid: "doyoon", name: "피아노", schedule: { 1: "16:20~17:00", 2: "16:20~17:00", 3: "16:20~17:00", 4: "16:20~17:00", 5: "16:20~17:00" } },
+          doyoon_taekwondo: { kid: "doyoon", name: "태권도", schedule: { 1: "17:05~17:50", 2: "17:05~17:50", 3: "17:05~17:50", 4: "17:05~17:50", 5: "17:05~17:50" } }
+        },
+        attendance: {}
+      },
+      cards: {
+        schedule: [
+          { id: 1, day: 1, cardGroup: "신한카드", name: "신한올웨이즈온", detail: "기프트샵 1원 + 터치 1만원", checked: false },
+          { id: 2, day: 5, cardGroup: "신한 짭모아", name: "SKT 통신요금 선결제", detail: "₩137,400 (짭모아 10회 분할)", checked: false },
+          { id: 3, day: 7, cardGroup: "국민카드", name: "자연드림 조합비", detail: "조합비 1만원", checked: false },
+          { id: 4, day: 7, cardGroup: "신한 짭모아", name: "효경주간보호 분할결제", detail: "주간보호 5천원 이상 분할결제", checked: false },
+          { id: 5, day: 8, cardGroup: "신한 짭모아", name: "스카이라이프 선결제", detail: "8회 / ₩43,290 분할", checked: false },
+          { id: 6, day: 8, cardGroup: "신한 짭모아", name: "유알모(유모바일) 선결제", detail: "20회 / ₩105,390 분할", checked: false },
+          { id: 7, day: 9, cardGroup: "LG헬로비전 롯데", name: "LGU+인터넷 (802동)", detail: "₩22,000", checked: false },
+          { id: 8, day: 10, cardGroup: "계좌자동이체", name: "농협보험료 출금", detail: "보험 ₩245,890 외", checked: false },
+          { id: 9, day: 10, cardGroup: "SK인텔릭스 삼성", name: "SK매직 정수기", detail: "₩31,900", checked: false },
+          { id: 10, day: 11, cardGroup: "신한 짭모아", name: "KTM 선결제", detail: "10회 / ₩53,950 분할", checked: false },
+          { id: 11, day: 11, cardGroup: "MG하나카드", name: "운전자보험 / OpenAI", detail: "운전자 5,671 / OpenAI 약 3만", checked: false },
+          { id: 12, day: 13, cardGroup: "삼성/하나카드", name: "삼성·MG하나·헬로 결제일", detail: "삼성(30.7만) / MG하나(95만) / 헬로(1.59만)", checked: false },
+          { id: 13, day: 14, cardGroup: "은행계좌출금", name: "주요 카드사 결제대금 출금", detail: "카드 약 640만 / 피아노(라희) 17만 / 연금", checked: false },
+          { id: 14, day: 15, cardGroup: "신한 짭모아", name: "도시가스 요금 분할결제", detail: "총 8회 (16,800원 1회 + 5,000원 7회)", checked: false },
+          { id: 15, day: 17, cardGroup: "현장검침", name: "전기 검침일", detail: "802, 803, 804동 계량기 지침 확인", checked: false },
+          { id: 16, day: 19, cardGroup: "신한 짭모아", name: "건강보험료 선결제", detail: "The건강보험 앱 5천원이상 10회 분할납부", checked: false },
+          { id: 17, day: 20, cardGroup: "은행계좌출금", name: "대출이자 / 아이오닉5 할부", detail: "대출 361,206 / 차량 296,410 / 우유 21,200", checked: false },
+          { id: 18, day: 21, cardGroup: "우리넥센카드", name: "802동 아파트 관리비", detail: "우리넥센카드 실적 인정", checked: false },
+          { id: 19, day: 21, cardGroup: "쿠팡 롯데카드", name: "803동 아파트 관리비", detail: "쿠팡롯데카드 실적 인정", checked: false },
+          { id: 20, day: 21, cardGroup: "LG헬로비전 롯데", name: "804동 아파트 관리비", detail: "LG헬로롯데카드 실적 인정 / SKB(60,500)", checked: false },
+          { id: 21, day: 23, cardGroup: "쿠팡 롯데카드", name: "쿠팡와우 월회비", detail: "₩7,890 / 몬테소리 3만", checked: false },
+          { id: 22, day: 24, cardGroup: "은행계좌출금", name: "태권도 / 미술 / 연금수령", detail: "태권도 15만 / 미술 12만 / 기초·국민연금", checked: false },
+          { id: 23, day: 25, cardGroup: "LG헬로비전 롯데", name: "한경신문 구독료", detail: "₩25,000 (실적인정)", checked: false },
+          { id: 24, day: 25, cardGroup: "MG하나카드", name: "Claude AI 정기구독", detail: "약 ₩30,000 결제", checked: false },
+          { id: 25, day: 28, cardGroup: "은행계좌출금", name: "피아노(도윤) / 방과후", detail: "피아노 14만 / 플룻, 가야금", checked: false },
+          { id: 26, day: 30, cardGroup: "전체점검", name: "카드사 실적 마감일 점검", detail: "짭모아 70회 및 각 카드 전월실적 최종 확인", checked: false },
+          { id: 27, day: 31, cardGroup: "은행계좌출금", name: "라희 미술 / 논술 / 관리비", detail: "미술 12만 / 논술 4.5만 / 804동 이체", checked: false }
+        ],
+        splitTargets: [
+          { id: "skt", name: "SKT 선결제 (10회)", count: 10, detail: "₩137,400 (10회 분할)", checkedList: [] },
+          { id: "uplus", name: "유알모 선결제 (20회)", count: 20, detail: "₩105,390 (20회 분할)", checkedList: [] },
+          { id: "sky", name: "스카이라이프 (8회)", count: 8, detail: "₩43,290 (8회 분할)", checkedList: [] },
+          { id: "ktm", name: "KTM 선결제 (10회)", count: 10, detail: "₩53,950 (10회 분할)", checkedList: [] },
+          { id: "gas", name: "도시가스 분할 (8회)", count: 8, detail: "₩51,800 (16,800원 1회 + 5,000원 7회)", checkedList: [] },
+          { id: "nhis", name: "건강보험 (10회)", count: 10, detail: "₩51,300 (10회 선납)", checkedList: [] },
+          { id: "etc", name: "기타 결제 (4회)", count: 4, detail: "₩42,113 (5,000원 이상 결제 4회)", checkedList: [] }
+        ],
+        utility: [
+          { dong: "802동", gasUsage: "38", gasCost: "42,880", elecUsage: "610", elecCost: "150,100" },
+          { dong: "803동", gasUsage: "09", gasCost: "10,820", elecUsage: "260", elecCost: "40,280" },
+          { dong: "804동", gasUsage: "19", gasCost: "21,870", elecUsage: "414", elecCost: "76,470" }
+        ]
+      },
+      fixedItems: [
+        { title: "명절휴가비", cost: "2,178,600원", date: "26.09.18", note: "봉급(3,631,000원) * 60%" },
+        { title: "Gemini Pro구독", cost: "US 19.99", date: "26.09.23", note: "15개월 무료구독(Geminitester81)" },
+        { title: "아파트 전세계약(804)", cost: "1억", date: "26.09.25", note: "묵시적 전세 연장 (20.09.25)" },
+        { title: "탈모약(피나스테리드)", cost: "30,000원", date: "26.09.27", note: "3개월(닥터나우/목포사랑상품권)" },
+        { title: "자동차 검사(카니발)", cost: "30,000원", date: "26.09.28", note: "검사기간(26.05.30 ~ 26.09.25)" },
+        { title: "재산세", cost: "133,670원", date: "26.09.30", note: "29평(802동) 분납(7월/9월)" },
+        { title: "당뇨/뇌개선제", cost: "115,000원", date: "26.09.30", note: "처방(2개월/60일)" },
+        { title: "연금대부 신청", cost: "3,000만원", date: "26.10.16", note: "4분기 행복도약대출(09시 신청)" },
+        { title: "차용거래", cost: "8,780만원", date: "26.10.21", note: "25.01.21/20만/5,000만원" },
+        { title: "신우치과(김도윤)", cost: "-", date: "26.11.13", note: "3개월 정기검진" },
+        { title: "우리치과(김라희)", cost: "-", date: "26.11.18", note: "3개월 정기검진" }
+      ],
+      bible: { history: {} },
+      insurance: [
+        { name: "김훤", type: "실손", title: "(무)헤아림실손의료비보험2004", policyNo: "319-0767-4493-11", dates: "2020.09.28 ~ 2081.09.28", details: ["질병/상해 입원의료비 5,000만원", "도수·비급여 주사·MRI 포함"] },
+        { name: "김훤", type: "건강", title: "(무)NH가성비굿건강보험(1종)", policyNo: "319-0698-9165-11", dates: "2020.05.18 ~ 2062.05.18", details: ["일반암 4,000만원 / 유사암 2,000만원", "뇌혈관·급성심근경색 2,000만원"] },
+        { name: "김훤", type: "운전자", title: "무배당 차도리운전자보험2004", policyNo: "LA20204214413000", dates: "2020.05.19 ~ 2062.05.19", details: ["교통사고처리지원금 1억원", "벌금 2,000만원 (스쿨존 3,000만)"] },
+        { name: "신해미", type: "실손", title: "무배당프로미라이프 훼밀리라이프1206", policyNo: "964120113758", dates: "2012.06.22 ~ 2090.06.22", details: ["실손 입원의료비 각 5,000만원 (3년갱신)", "일상생활배상책임 1억원"] },
+        { name: "신해미", type: "건강", title: "무배당여성시대건강보험", policyNo: "6419693210007", dates: "2001.02.02 ~ 2060.02.02", details: ["여성특정암 2,000만원 / 수술비 지원", "납입완료"] },
+        { name: "김라희", type: "실손", title: "(무)헤아림실손의료비보험2004", policyNo: "319-0700-5506-31", dates: "2020.05.22 ~ 2116.05.22", details: ["질병/상해 입원의료비 5,000만원", "도수/주사/MRI 특약"] },
+        { name: "김라희", type: "건강", title: "(무)NH가성비굿플러스어린이보험", policyNo: "319-0700-8792-01", dates: "2020.05.22 ~ 2116.05.22", details: ["암 5,000만 / 뇌혈관 5,000만 / 허혈성 5,000만"] },
+        { name: "김도윤", type: "실손", title: "(무)헤아림실손의료비보험2004", policyNo: "319-0702-5730-11", dates: "2020.05.27 ~ 2120.10.30", details: ["질병/상해 입원의료비 5,000만원", "도수/주사/MRI 특약"] },
+        { name: "김도윤", type: "건강", title: "(무)NH가성비굿플러스어린이보험", policyNo: "139-0702-8787-81", dates: "2020.05.27 ~ 2120.10.30", details: ["암 5,000만 / 뇌혈관 5,000만 / 허혈성 5,000만"] }
+      ]
+    };
+
+    let master = JSON.parse(localStorage.getItem("unified_family_portal_v2026_opt")) || DEFAULT_MASTER;
+    if (!master.masterEtfPrices) master.masterEtfPrices = DEFAULT_MASTER.masterEtfPrices;
+    function saveMaster() { localStorage.setItem("unified_family_portal_v2026_opt", JSON.stringify(master)); }
+
+    function exportAllData() {
+      const blob = new Blob([JSON.stringify(master, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `통합포털_백업_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    }
+
+    function importAllData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        try {
+          master = JSON.parse(evt.target.result);
+          if (!master.masterEtfPrices) master.masterEtfPrices = DEFAULT_MASTER.masterEtfPrices;
+          saveMaster();
+          alert("데이터가 정상적으로 복원되었습니다.");
+          location.reload();
+        } catch(err) { alert("유효한 백업 파일이 아닙니다."); }
+      };
+      reader.readAsText(file);
+    }
+
+    function switchGlobalTab(tabId, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.querySelectorAll('.tab-nav-btn').forEach(b => {
+        b.classList.remove('border-sky-400', 'text-sky-400', 'font-bold');
+        b.classList.add('border-transparent', 'text-slate-400');
+      });
+      const targetPanel = document.getElementById(tabId);
+      if (targetPanel) targetPanel.classList.remove('hidden');
+      if (btn) {
+        btn.classList.add('border-sky-400', 'text-sky-400', 'font-bold');
+        btn.classList.remove('border-transparent', 'text-slate-400');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 1. 자산관리 (마스터 ETF 현재단가 일괄 연동 & 수식 잠금)
+    // -------------------------------------------------------------
+    const parseNum = v => Number(String(v || 0).replace(/[^0-9.-]+/g, "")) || 0;
+    const fmt = n => Math.round(n || 0).toLocaleString("ko-KR");
+    const fmtWon = n => (n < 0 ? "-" : "") + "₩" + Math.abs(Math.round(n || 0)).toLocaleString("ko-KR");
+
+    function renderFinance() {
+      const f = master.finance;
+
+      // 1) ETF 마스터 단가 입력바 렌더링
+      const mContainer = document.getElementById("masterEtfPriceInputs");
+      mContainer.innerHTML = Object.entries(master.masterEtfPrices).map(([name, price]) => `
+        <div class="bg-white p-2 rounded-lg border border-blue-100 shadow-2xs">
+          <div class="font-bold text-[11px] text-slate-700 truncate" title="${name}">${name}</div>
+          <div class="flex items-center gap-1 mt-1">
+            <span class="text-[10px] text-slate-400">단가:</span>
+            <input type="text" inputmode="numeric" class="w-full border border-slate-200 rounded px-1.5 py-0.5 text-right font-extrabold text-blue-600 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                   value="${fmt(price)}"
+                   onfocus="this.value=parseNum(this.value)"
+                   onblur="updateMasterEtfPrice('${name}', this.value)">
+          </div>
+        </div>
+      `).join("");
+
+      // 2) 가족 총괄 현황표
+      const tbody = document.getElementById("overviewTableBody");
+      let totalAll = 0, totalNet = 0, totalLoans = 0;
+
+      tbody.innerHTML = f.overview.map((r, i) => {
+        const sum = r.stock + r.isa + r.pen1 + r.pen2 + r.irp + r.ret + r.estate + r.loan;
+        const net = r.stock + r.isa + r.pen1 + r.pen2 + r.irp + r.ret + r.loan;
+        totalAll += sum; totalNet += net; totalLoans += r.loan;
+
+        return `
+          <tr>
+            <td class="text-center font-bold">
+              <input class="cell-input cell-input-center font-bold" value="${r.name}" onblur="updateFinName(${i}, this.value)">
+            </td>
+            <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(r.stock)}" onfocus="this.value=parseNum(this.value)" onblur="updateFinVal(${i},'stock',this.value)"></td>
+            <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(r.isa)}" onfocus="this.value=parseNum(this.value)" onblur="updateFinVal(${i},'isa',this.value)"></td>
+            <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(r.pen1)}" onfocus="this.value=parseNum(this.value)" onblur="updateFinVal(${i},'pen1',this.value)"></td>
+            <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(r.pen2)}" onfocus="this.value=parseNum(this.value)" onblur="updateFinVal(${i},'pen2',this.value)"></td>
+            <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(r.irp)}" onfocus="this.value=parseNum(this.value)" onblur="updateFinVal(${i},'irp',this.value)"></td>
+            <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(r.ret)}" onfocus="this.value=parseNum(this.value)" onblur="updateFinVal(${i},'ret',this.value)"></td>
+            <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(r.estate)}" onfocus="this.value=parseNum(this.value)" onblur="updateFinVal(${i},'estate',this.value)"></td>
+            <td class="text-right ${r.loan < 0 ? 'text-rose-600 font-bold' : ''}"><input inputmode="numeric" class="cell-input" value="${fmt(r.loan)}" onfocus="this.value=parseNum(this.value)" onblur="updateFinVal(${i},'loan',this.value)"></td>
+            <td class="text-right font-bold text-rose-700 cell-calc">${fmtWon(sum)}</td>
+            <td class="text-center">
+              <button onclick="deleteOverviewRow(${i})" class="text-rose-600 hover:text-rose-800 text-[11px] font-bold">삭제</button>
+            </td>
+          </tr>
+        `;
+      }).join("") + `
+        <tr class="bg-slate-100 font-bold">
+          <td class="text-center">합계</td>
+          <td colspan="8" class="cell-calc"></td>
+          <td class="text-right text-rose-700 cell-calc">${fmtWon(totalAll)}</td>
+          <td></td>
+        </tr>
+      `;
+
+      document.getElementById("grandTotalAsset").innerText = fmtWon(totalAll);
+      document.getElementById("grandNetAsset").innerText = fmtWon(totalNet);
+      document.getElementById("grandTotalLoan").innerText = fmtWon(totalLoans);
+
+      // 3) 계좌별 종목 현황 (마스터 단가 자동 연동)
+      const hContainer = document.getElementById("holdingsContainer");
+      hContainer.innerHTML = f.accounts.map((acc, aIdx) => {
+        let accBuySum = 0, accEvalSum = 0;
+
+        acc.items.forEach(it => {
+          // 마스터 단가가 존재하는 종목이면 자동으로 curPrice 동기화
+          if (master.masterEtfPrices[it.name] !== undefined) {
+            it.curPrice = master.masterEtfPrices[it.name];
+          }
+          const buyTotal = (Number(it.buyPrice)||0) * (Number(it.qty)||0);
+          const evalTotal = (Number(it.curPrice)||0) * (Number(it.qty)||0);
+          accBuySum += (it.type === "현금" ? evalTotal : buyTotal);
+          accEvalSum += evalTotal;
+        });
+
+        const rows = acc.items.map((it, iIdx) => {
+          const buyTotal = it.type === "현금" ? it.curPrice * it.qty : it.buyPrice * it.qty;
+          const evalTotal = it.curPrice * it.qty;
+          const profit = evalTotal - buyTotal;
+          const rate = buyTotal > 0 ? (profit / buyTotal * 100) : 0;
+          const ratio = accEvalSum > 0 ? (evalTotal / accEvalSum * 100) : 0;
+
+          return `
+            <tr>
+              <td class="text-center cell-calc">${iIdx + 1}</td>
+              <td class="text-center">
+                <input class="cell-input cell-input-center" value="${it.type}" onblur="updateHoldingField(${aIdx},${iIdx},'type',this.value)">
+              </td>
+              <td class="text-center font-bold cell-calc">${ratio.toFixed(0)}%</td>
+              <td class="text-left font-bold px-2">
+                <input class="cell-input cell-input-text font-bold" value="${it.name}" onblur="updateHoldingField(${aIdx},${iIdx},'name',this.value)">
+              </td>
+              <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(it.buyPrice)}" onfocus="this.value=parseNum(this.value)" onblur="updateHoldingField(${aIdx},${iIdx},'buyPrice',this.value)"></td>
+              <td class="text-right font-bold"><input inputmode="numeric" class="cell-input font-bold" value="${fmt(it.qty)}" onfocus="this.value=parseNum(this.value)" onblur="updateHoldingField(${aIdx},${iIdx},'qty',this.value)"></td>
+              <td class="text-right"><input inputmode="numeric" class="cell-input ${master.masterEtfPrices[it.name] ? 'bg-blue-50/50 font-bold text-blue-700' : ''}" value="${fmt(it.curPrice)}" onfocus="this.value=parseNum(this.value)" onblur="updateHoldingField(${aIdx},${iIdx},'curPrice',this.value)"></td>
+              <td class="text-right font-bold cell-calc ${rate < 0 ? 'text-rose-600' : 'text-blue-600'}">${rate.toFixed(2)}%</td>
+              <td class="text-right cell-calc">${fmt(buyTotal)}</td>
+              <td class="text-right font-bold cell-calc">${fmt(evalTotal)}</td>
+              <td class="text-right font-bold cell-calc ${profit < 0 ? 'text-rose-600' : 'text-blue-600'}">${profit > 0 ? '+' : ''}${fmt(profit)}</td>
+              <td class="text-center">
+                <button onclick="deleteHoldingItem(${aIdx},${iIdx})" class="text-rose-600 hover:text-rose-800 text-[11px]">삭제</button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        return `
+          <div class="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
+            <div class="px-4 py-2 font-bold text-xs bg-slate-100 flex justify-between items-center ${acc.theme}">
+              <span>■ ${acc.owner} : ${acc.title}</span>
+              <div class="flex items-center gap-3">
+                <span class="text-blue-700 font-extrabold">평가액: ${fmtWon(accEvalSum)}</span>
+                <button onclick="addHoldingItem(${aIdx})" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">+ 종목 추가</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="gsheet min-w-[900px]">
+                <colgroup>
+                  <col style="width:35px"><col style="width:60px"><col style="width:45px"><col style="width:200px"><col style="width:85px"><col style="width:65px"><col style="width:85px"><col style="width:75px"><col style="width:100px"><col style="width:105px"><col style="width:95px"><col style="width:50px">
+                </colgroup>
+                <thead>
+                  <tr class="bg-slate-50 text-slate-700 text-center font-bold">
+                    <th>순번</th><th>구분</th><th>비중</th><th>종목명</th><th>매입단가</th><th>수량</th><th>현재단가</th><th>수익률</th><th>매입가액</th><th>평가금액</th><th>평가손익</th><th>관리</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // 4) 월별 결산 히스토리 렌더링
+      const histContainer = document.getElementById("monthlyHistoryContainer");
+      histContainer.innerHTML = Object.entries(f.monthly).map(([name, data]) => {
+        data.rows.sort((a, b) => a.m.localeCompare(b.m));
+        let cumProfit = 0;
+        const calculatedRows = data.rows.map((r, idx) => {
+          const total = r.vals.reduce((s, v) => s + Number(v || 0), 0);
+          let diff = 0, profit = 0;
+          if (idx === 0) { diff = 0; profit = 0; cumProfit = 0; }
+          else {
+            const prevTotal = data.rows[idx - 1].vals.reduce((s, v) => s + Number(v || 0), 0);
+            diff = total - prevTotal;
+            profit = diff - (Number(r.in) || 0);
+            cumProfit += profit;
+          }
+          return { ...r, total, diff, profit, cumProfit };
+        });
+
+        const rowsHtml = calculatedRows.map((r, rIdx) => `
+          <tr>
+            <td class="text-center font-bold"><input class="cell-input cell-input-center font-bold" value="${r.m}" onblur="updateMonthLabel('${name}',${rIdx},this.value)"></td>
+            ${r.vals.map((v, cIdx) => `<td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(v)}" onfocus="this.value=parseNum(this.value)" onblur="updateMonthlyVal('${name}',${rIdx},${cIdx},this.value)"></td>`).join("")}
+            <td class="text-right font-bold text-rose-700 cell-calc">${fmtWon(r.total)}</td>
+            <td class="text-right font-bold cell-calc ${r.diff < 0 ? 'text-rose-600' : 'text-blue-600'}">${r.diff > 0 ? '+' : ''}${fmt(r.diff)}</td>
+            <td class="text-right"><input inputmode="numeric" class="cell-input" value="${fmt(r.in)}" onfocus="this.value=parseNum(this.value)" onblur="updateMonthlyInflow('${name}',${rIdx},this.value)"></td>
+            <td class="text-right font-bold cell-calc ${r.profit < 0 ? 'text-rose-600' : 'text-blue-600'}">${r.profit > 0 ? '+' : ''}${fmt(r.profit)}</td>
+            <td class="text-right font-bold cell-calc ${r.cumProfit < 0 ? 'text-rose-600' : ''}">${fmt(r.cumProfit)}</td>
+            <td class="text-center"><button onclick="deleteMonthlyRow('${name}',${rIdx})" class="text-rose-600 hover:text-rose-800 text-[11px] font-bold">삭제</button></td>
+          </tr>
+        `).join("");
+
+        return `
+          <div class="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
+            <div class="px-4 py-2 font-bold text-xs bg-blue-50 text-blue-900 flex justify-between items-center">
+              <span>■ ${name} 월말 결산 히스토리</span>
+              <button onclick="addMonthlyRow('${name}')" class="px-2.5 py-1 bg-blue-600 text-white rounded text-xs font-semibold">+ 당월 결산 추가</button>
+            </div>
+            <div class="table-responsive">
+              <table class="gsheet min-w-[950px]">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-700 text-center font-bold">
+                    <th style="width:85px">결산월</th>
+                    ${data.cols.map(c => `<th style="width:95px">${c}</th>`).join("")}
+                    <th style="width:115px" class="cell-calc">합계 (수식)</th>
+                    <th style="width:105px" class="cell-calc">월별자산증식</th>
+                    <th style="width:95px">신규투자금</th>
+                    <th style="width:105px" class="cell-calc">월별투자수익</th>
+                    <th style="width:105px" class="cell-calc">총누적수익</th>
+                    <th style="width:50px">관리</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 마스터 ETF 단가 일괄 갱신 함수
+    function updateMasterEtfPrice(etfName, val) {
+      const p = parseNum(val);
+      master.masterEtfPrices[etfName] = p;
+      // 전 계좌에 동일 종목이 있으면 단가 즉시 일괄 적용
+      master.finance.accounts.forEach(acc => {
+        acc.items.forEach(it => {
+          if (it.name === etfName) {
+            it.curPrice = p;
+          }
+        });
+      });
+      saveMaster();
+      renderFinance();
+    }
+
+    function updateFinName(i, val) { master.finance.overview[i].name = val.trim(); saveMaster(); renderFinance(); }
+    function updateFinVal(i, key, val) { master.finance.overview[i][key] = parseNum(val); saveMaster(); renderFinance(); }
+    function addOverviewRow() {
+      const name = prompt("추가할 가족 또는 자산군 이름을 입력하세요:", "새 구성원");
+      if (!name) return;
+      master.finance.overview.push({ name, stock:0, isa:0, pen1:0, pen2:0, irp:0, ret:0, estate:0, loan:0 });
+      saveMaster(); renderFinance();
+    }
+    function deleteOverviewRow(i) {
+      if (confirm('해당 자산 행을 삭제하시겠습니까?')) { master.finance.overview.splice(i, 1); saveMaster(); renderFinance(); }
+    }
+
+    function updateHoldingField(aIdx, iIdx, key, val) {
+      if (key === 'buyPrice' || key === 'qty' || key === 'curPrice') {
+        master.finance.accounts[aIdx].items[iIdx][key] = parseNum(val);
+        // 만약 개별 단가를 직접 수정한 종목이 마스터 ETF 목록에 있다면 마스터 단가도 함께 업데이트
+        if (key === 'curPrice' && master.masterEtfPrices[master.finance.accounts[aIdx].items[iIdx].name] !== undefined) {
+          master.masterEtfPrices[master.finance.accounts[aIdx].items[iIdx].name] = parseNum(val);
+        }
+      } else {
+        master.finance.accounts[aIdx].items[iIdx][key] = val.trim();
+      }
+      saveMaster(); renderFinance();
+    }
+    function addHoldingItem(aIdx) {
+      master.finance.accounts[aIdx].items.push({ name: "신규 ETF", type: "미국주식", buyPrice: 0, qty: 0, curPrice: 0 });
+      saveMaster(); renderFinance();
+    }
+    function deleteHoldingItem(aIdx, iIdx) {
+      if (confirm('해당 종목을 삭제하시겠습니까?')) { master.finance.accounts[aIdx].items.splice(iIdx, 1); saveMaster(); renderFinance(); }
+    }
+
+    function updateMonthLabel(name, rIdx, val) { master.finance.monthly[name].rows[rIdx].m = val.trim(); saveMaster(); renderFinance(); }
+    function updateMonthlyVal(name, rIdx, cIdx, val) { master.finance.monthly[name].rows[rIdx].vals[cIdx] = parseNum(val); saveMaster(); renderFinance(); }
+    function updateMonthlyInflow(name, rIdx, val) { master.finance.monthly[name].rows[rIdx].in = parseNum(val); saveMaster(); renderFinance(); }
+    function addMonthlyRow(name) {
+      const data = master.finance.monthly[name];
+      const rows = data.rows;
+      const last = rows[rows.length - 1];
+      let nextM = "2026-11";
+      if (last && last.m.includes("-")) {
+        const parts = last.m.split("-");
+        let y = parseInt(parts[0], 10), m = parseInt(parts[1], 10) + 1;
+        if (m > 12) { y += 1; m = 1; }
+        nextM = `${y}-${String(m).padStart(2, '0')}`;
+      }
+      rows.push({ m: nextM, vals: last ? [...last.vals] : data.cols.map(() => 0), in: 0 });
+      saveMaster(); renderFinance();
+    }
+    function deleteMonthlyRow(name, idx) {
+      if (confirm('해당 결산 행을 삭제하시겠습니까?')) { master.finance.monthly[name].rows.splice(idx, 1); saveMaster(); renderFinance(); }
+    }
+
+    // -------------------------------------------------------------
+    // 2. 자녀 일과 (일주일 전체 일과표 표출 & (시간순) 텍스트 삭제)
+    // -------------------------------------------------------------
+    let kidsDate = new Date();
+
+    function parseStartMinutes(timeStr) {
+      if (!timeStr) return 9999;
+      const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+      if (match) return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+      return 9999;
+    }
+
+    function renderKids() {
+      const y = kidsDate.getFullYear(), m = String(kidsDate.getMonth() + 1).padStart(2, '0'), d = String(kidsDate.getDate()).padStart(2, '0');
+      const dateKey = `${y}-${m}-${d}`;
+      const ymKey = `${y}-${m}`;
+      const dayOfWeek = kidsDate.getDay();
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+      document.getElementById('kidsDateDisplay').innerText = `${dateKey} (${dayNames[dayOfWeek]}요일)`;
+      document.getElementById('kidsMonthSummaryTitle').innerText = `${y}년 ${parseInt(m, 10)}월 과목별 출석 현황`;
+      const att = master.kids.attendance[dateKey] || {};
+
+      // 1) 대상 선택 셀렉트박스 & 배지
+      const sel = document.getElementById('kidsInputKid');
+      sel.innerHTML = master.kids.targets.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+
+      const bList = document.getElementById('kidsTargetBadgeList');
+      bList.innerHTML = master.kids.targets.map((t, idx) => `
+        <span class="px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${t.badgeBg} ${t.color}">
+          <b>${t.name}</b>
+          <button onclick="deleteKidTarget(${idx})" class="text-[10px] text-slate-400 hover:text-rose-600">×</button>
+        </span>
+      `).join("");
+
+      // 2) 일주일 전체 일과표 (월~일 종합 표출)
+      const weekGrid = document.getElementById('kidsFullWeekGrid');
+      weekGrid.innerHTML = '';
+      const weekDaysOrder = [1, 2, 3, 4, 5, 6, 0];
+
+      weekDaysOrder.forEach(dayIdx => {
+        const dayBox = document.createElement('div');
+        dayBox.className = "bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2";
+
+        const dayItems = [];
+        Object.entries(master.kids.subjects).forEach(([k, it]) => {
+          if (it.schedule && it.schedule[dayIdx]) {
+            const tgt = master.kids.targets.find(t => t.id === it.kid) || { name: it.kid, color: 'text-slate-700', border: 'border-slate-400' };
+            const timeStr = it.schedule[dayIdx];
+            dayItems.push({
+              name: it.name,
+              targetName: tgt.name,
+              border: tgt.border,
+              time: timeStr,
+              startMinutes: parseStartMinutes(timeStr)
+            });
+          }
+        });
+        dayItems.sort((a, b) => a.startMinutes - b.startMinutes);
+
+        let itemsHtml = '';
+        if (!dayItems.length) {
+          itemsHtml = '<div class="text-[11px] text-slate-400 py-3 text-center">일정 없음</div>';
+        } else {
+          itemsHtml = dayItems.map(it => `
+            <div class="p-1.5 bg-white rounded border-l-3 ${it.border} shadow-2xs text-xs space-y-0.5">
+              <div class="font-bold text-slate-800 text-[11px] truncate">[${it.targetName}] ${it.name}</div>
+              <div class="text-[10px] text-slate-500 font-medium">${it.time}</div>
+            </div>
+          `).join("");
+        }
+
+        dayBox.innerHTML = `
+          <div class="font-bold text-xs text-center border-b pb-1 ${dayIdx===0?'text-rose-600':dayIdx===6?'text-blue-600':'text-slate-800'}">
+            ${dayNames[dayIdx]}요일
+          </div>
+          <div class="space-y-1.5">${itemsHtml}</div>
+        `;
+        weekGrid.appendChild(dayBox);
+      });
+
+      // 3) 당일 출석 체크리스트
+      const container = document.getElementById('kidsCheckTargetContainers');
+      container.innerHTML = '';
+
+      master.kids.targets.forEach(tgt => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2";
+        
+        const todayItems = [];
+        Object.entries(master.kids.subjects).forEach(([key, it]) => {
+          if (it.kid === tgt.id && it.schedule && it.schedule[dayOfWeek]) {
+            const timeStr = it.schedule[dayOfWeek];
+            todayItems.push({
+              key,
+              name: it.name,
+              time: timeStr,
+              startMinutes: parseStartMinutes(timeStr)
+            });
+          }
+        });
+
+        todayItems.sort((a, b) => a.startMinutes - b.startMinutes);
+
+        let rowsHtml = '';
+        if (todayItems.length === 0) {
+          rowsHtml = '<div class="text-xs text-slate-400 py-1.5 text-center">오늘 등록된 일정이 없습니다.</div>';
+        } else {
+          rowsHtml = todayItems.map(it => {
+            const isDone = !!att[it.key];
+            return `
+              <label class="flex items-center justify-between p-2 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition">
+                <div class="flex items-center gap-2.5">
+                  <input type="checkbox" ${isDone ? 'checked' : ''} class="w-4 h-4 rounded text-blue-600" onchange="toggleKidsAttendance('${dateKey}','${it.key}',this.checked)">
+                  <span class="text-xs font-bold ${isDone ? 'line-through text-slate-400' : 'text-slate-800'}">${it.name}</span>
+                </div>
+                <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${it.time}</span>
+              </label>
+            `;
+          }).join("");
+        }
+
+        card.innerHTML = `
+          <div class="font-bold text-xs ${tgt.color} border-b pb-1.5 flex justify-between">
+            <span>${tgt.name} 일과 체크</span>
+            <span class="text-[11px] text-slate-400 font-normal">오늘 ${todayItems.length}개</span>
+          </div>
+          <div class="space-y-1.5">${rowsHtml}</div>
+        `;
+        container.appendChild(card);
+      });
+
+      // 4) 월별 출석 집계 카운팅
+      const summaryGrid = document.getElementById('kidsMonthSummaryGrid');
+      summaryGrid.innerHTML = '';
+      const monthlyCounts = {};
+      Object.keys(master.kids.subjects).forEach(k => monthlyCounts[k] = 0);
+
+      Object.entries(master.kids.attendance).forEach(([dStr, checks]) => {
+        if (dStr.startsWith(ymKey)) {
+          Object.entries(checks).forEach(([subKey, isChecked]) => {
+            if (isChecked && monthlyCounts[subKey] !== undefined) {
+              monthlyCounts[subKey]++;
+            }
+          });
+        }
+      });
+
+      master.kids.targets.forEach(tgt => {
+        let totalKidChecks = 0;
+        const targetSubjects = Object.entries(master.kids.subjects).filter(([k, s]) => s.kid === tgt.id);
+
+        const pillHtml = targetSubjects.map(([k, s]) => {
+          const cnt = monthlyCounts[k] || 0;
+          totalKidChecks += cnt;
+          return `
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex justify-between items-center text-xs">
+              <span class="font-semibold text-slate-700">${s.name}</span>
+              <span class="font-black ${tgt.color}">${cnt}회</span>
+            </div>
+          `;
+        }).join("");
+
+        const sec = document.createElement('div');
+        sec.className = "space-y-2 border-b pb-3 last:border-b-0";
+        sec.innerHTML = `
+          <div class="flex justify-between items-center text-xs font-bold ${tgt.color}">
+            <span>${tgt.name} 과목별 출석 현황</span>
+            <span class="text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-full">총 ${totalKidChecks}회 출석</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${pillHtml || '<div class="text-xs text-slate-400 col-span-2">등록된 과목이 없습니다.</div>'}</div>
+        `;
+        summaryGrid.appendChild(sec);
+      });
+
+      // 5) 일과 관리 목록
+      const mList = document.getElementById('kidsRegisteredList');
+      mList.innerHTML = Object.entries(master.kids.subjects).map(([key, it]) => {
+        const tgt = master.kids.targets.find(t => t.id === it.kid) || { name: it.kid, color: 'text-slate-700' };
+        let scheduleSummary = [];
+        if (it.schedule) {
+          Object.entries(it.schedule).forEach(([dayIdx, tStr]) => {
+            scheduleSummary.push(`${dayNames[dayIdx]}(${tStr})`);
+          });
+        }
+        return `
+          <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 hover:bg-slate-50 text-xs">
+            <div>
+              <span class="font-bold ${tgt.color}">[${tgt.name}]</span>
+              <span class="font-bold text-slate-800 ml-1">${it.name}</span>
+              <div class="text-[11px] text-slate-500 mt-0.5">${scheduleSummary.join(" / ")}</div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="editKidsSubject('${key}')" class="text-blue-600 font-semibold hover:underline text-xs">수정</button>
+              <button onclick="deleteKidsSubject('${key}')" class="text-rose-600 font-semibold hover:underline text-xs">삭제</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function addNewKidTarget() {
+      const name = prompt("새로 추가할 자녀 또는 대상의 이름을 입력하세요:", "자녀");
+      if (!name) return;
+      const id = `target_${Date.now()}`;
+      const colors = [
+        { color: "text-emerald-600", border: "border-emerald-500", badgeBg: "bg-emerald-50" },
+        { color: "text-purple-600", border: "border-purple-500", badgeBg: "bg-purple-50" },
+        { color: "text-amber-600", border: "border-amber-500", badgeBg: "bg-amber-50" }
+      ];
+      const selectedColor = colors[master.kids.targets.length % colors.length];
+      master.kids.targets.push({ id, name, ...selectedColor });
+      saveMaster();
+      renderKids();
+    }
+
+    function deleteKidTarget(idx) {
+      if (master.kids.targets.length <= 1) return alert('최소 한 명 이상의 대상이 필요합니다.');
+      if (confirm(`'${master.kids.targets[idx].name}' 대상을 삭제하시겠습니까?`)) {
+        master.kids.targets.splice(idx, 1);
+        saveMaster();
+        renderKids();
+      }
+    }
+
+    function toggleKidsAttendance(dateKey, key, chk) {
+      if (!master.kids.attendance[dateKey]) master.kids.attendance[dateKey] = {};
+      master.kids.attendance[dateKey][key] = chk;
+      saveMaster(); renderKids();
+    }
+    function changeKidsDate(d) { kidsDate.setDate(kidsDate.getDate() + d); renderKids(); }
+
+    function switchKidsSubTab(mode) {
+      document.getElementById('kidsWeekTableSubView').classList.add('hidden');
+      document.getElementById('kidsCheckSubView').classList.add('hidden');
+      document.getElementById('kidsSummarySubView').classList.add('hidden');
+      document.getElementById('kidsManageSubView').classList.add('hidden');
+      document.getElementById('btnKidsSubWeekTable').className = 'flex-1 py-2 text-slate-600';
+      document.getElementById('btnKidsSubCheck').className = 'flex-1 py-2 text-slate-600';
+      document.getElementById('btnKidsSubSummary').className = 'flex-1 py-2 text-slate-600';
+      document.getElementById('btnKidsSubManage').className = 'flex-1 py-2 text-slate-600';
+
+      if (mode === 'weektable') {
+        document.getElementById('kidsWeekTableSubView').classList.remove('hidden');
+        document.getElementById('btnKidsSubWeekTable').className = 'flex-1 py-2 bg-white text-blue-600 rounded-lg shadow-sm';
+      } else if (mode === 'check') {
+        document.getElementById('kidsCheckSubView').classList.remove('hidden');
+        document.getElementById('btnKidsSubCheck').className = 'flex-1 py-2 bg-white text-blue-600 rounded-lg shadow-sm';
+      } else if (mode === 'summary') {
+        document.getElementById('kidsSummarySubView').classList.remove('hidden');
+        document.getElementById('btnKidsSubSummary').className = 'flex-1 py-2 bg-white text-blue-600 rounded-lg shadow-sm';
+      } else {
+        document.getElementById('kidsManageSubView').classList.remove('hidden');
+        document.getElementById('btnKidsSubManage').className = 'flex-1 py-2 bg-white text-blue-600 rounded-lg shadow-sm';
+      }
+      renderKids();
+    }
+
+    function resetKidsForm() {
+      document.getElementById('kidsEditKey').value = '';
+      document.getElementById('kidsFormTitle').innerText = '새 과목 / 일과 등록';
+      document.getElementById('kidsInputName').value = '';
+      [1,2,3,4,5,6,0].forEach(d => {
+        document.getElementById(`chk_d_${d}`).checked = false;
+        document.getElementById(`time_d_${d}`).value = '';
+      });
+    }
+
+    function editKidsSubject(key) {
+      const it = master.kids.subjects[key];
+      if (!it) return;
+      document.getElementById('kidsEditKey').value = key;
+      document.getElementById('kidsFormTitle').innerText = `[${it.name}] 수정 모드`;
+      document.getElementById('kidsInputKid').value = it.kid;
+      document.getElementById('kidsInputName').value = it.name;
+
+      [1,2,3,4,5,6,0].forEach(d => {
+        const timeVal = it.schedule && it.schedule[d] ? it.schedule[d] : '';
+        document.getElementById(`chk_d_${d}`).checked = !!timeVal;
+        document.getElementById(`time_d_${d}`).value = timeVal;
+      });
+      switchKidsSubTab('manage');
+    }
+
+    function saveKidsSubject() {
+      const editKey = document.getElementById('kidsEditKey').value;
+      const key = editKey || `sub_${Date.now()}`;
+      const kid = document.getElementById('kidsInputKid').value;
+      const name = document.getElementById('kidsInputName').value.trim();
+
+      if (!name) return alert('과목/일정명을 입력해주세요.');
+
+      const schedule = {};
+      let selectedCount = 0;
+      [1,2,3,4,5,6,0].forEach(d => {
+        if (document.getElementById(`chk_d_${d}`).checked) {
+          const t = document.getElementById(`time_d_${d}`).value.trim() || '시간미지정';
+          schedule[d] = t;
+          selectedCount++;
+        }
+      });
+
+      if (selectedCount === 0) return alert('진행 요일을 하나 이상 선택하고 시간을 입력해주세요.');
+
+      master.kids.subjects[key] = { kid, name, schedule };
+      saveMaster();
+      resetKidsForm();
+      renderKids();
+      alert(editKey ? '수정되었습니다.' : '새 일과가 등록되었습니다.');
+    }
+
+    function deleteKidsSubject(key) {
+      if (confirm(`'${master.kids.subjects[key].name}' 일정을 삭제하시겠습니까?`)) {
+        delete master.kids.subjects[key];
+        saveMaster();
+        renderKids();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 3. 교대근무 및 수당 (지정 단가 적용)
+    // -------------------------------------------------------------
+    const CYCLE = ['DAY', 'ALL', 'OFF_1', 'OFF_2', 'NIGHT', 'OFF_3'];
+    const SHIFT_NAMES = { 'DAY': '주간', 'ALL': '올(...)', 'NIGHT': '야간', 'OFF': '휴', 'VACATION': '연가' };
+    const PUBLIC_HOLIDAYS = { '2026-01-01':'신정','2026-02-16':'설날','2026-02-17':'설날','2026-02-18':'설날','2026-03-01':'3·1절','2026-03-02':'대체공휴일','2026-05-05':'어린이날','2026-05-24':'부처님오신날','2026-05-25':'대체공휴일','2026-06-06':'현충일','2026-08-15':'광복절','2026-08-17':'대체공휴일','2026-09-24':'추석','2026-09-25':'추석','2026-09-26':'추석','2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절' };
+    let shiftYear = 2026, shiftMonth = 8;
+    let currentModalDateStr = null;
+    let tempModalShift = null;
+
+    function renderShift() {
+      const cfg = master.shiftState;
+      document.getElementById('shiftCalendarTitle').innerText = `${shiftYear}년 ${shiftMonth + 1}월`;
+      document.getElementById('shiftMonthStatus').innerText = `${shiftYear}년 ${shiftMonth + 1}월 정산`;
+      
+      document.getElementById('labelOtRate').innerText = `시간외 (${fmt(cfg.rateOt)}원)`;
+      document.getElementById('labelNightRate').innerText = `야간 (${fmt(cfg.rateNight)}원)`;
+      document.getElementById('labelHolidayRate').innerText = `휴일 (${fmt(cfg.rateHoliday)}원)`;
+
+      const grid = document.getElementById('shiftCalendarGrid');
+      grid.innerHTML = '';
+
+      const firstDay = new Date(shiftYear, shiftMonth, 1);
+      const lastDay = new Date(shiftYear, shiftMonth + 1, 0);
+      const totalDays = lastDay.getDate();
+      const startDayOfWeek = firstDay.getDay();
+
+      for (let i = 0; i < startDayOfWeek; i++) {
+        const d = document.createElement('div');
+        d.className = 'h-14 rounded-lg bg-slate-50 border border-transparent';
+        grid.appendChild(d);
+      }
+
+      let weekdayRawWorkHours = 0, totalMeetingMins = 0, holidayOtHours = 0, totalNightHours = 0, totalHolidayCount = 0, weekdayLegalDays = 0;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      for (let day = 1; day <= totalDays; day++) {
+        const monthPad = String(shiftMonth + 1).padStart(2, '0');
+        const dayPad = String(day).padStart(2, '0');
+        const dateStr = `${shiftYear}-${monthPad}-${dayPad}`;
+        const dateObj = new Date(shiftYear, shiftMonth, day);
+        const dayOfWeek = dateObj.getDay();
+        const holiday = (dayOfWeek === 0 || dayOfWeek === 6 || !!PUBLIC_HOLIDAYS[dateStr]);
+
+        if (!holiday) weekdayLegalDays++;
+
+        let shift = 'OFF';
+        if (cfg.customDays && cfg.customDays[dateStr] && cfg.customDays[dateStr].shift) {
+          shift = cfg.customDays[dateStr].shift;
+        } else {
+          const refDate = new Date(cfg.syncDate);
+          const diffDays = Math.round((new Date(dateStr).getTime() - refDate.getTime()) / (1000 * 3600 * 24));
+          let cycleIdx = (cfg.syncCycleIndex + (diffDays % 6)) % 6;
+          if (cycleIdx < 0) cycleIdx += 6;
+          shift = CYCLE[cycleIdx];
+        }
+        if (shift.startsWith('OFF')) shift = 'OFF';
+
+        let meetingMins = (shift === 'OFF' || shift === 'VACATION') ? 0 : 20;
+        if (cfg.customDays && cfg.customDays[dateStr] && cfg.customDays[dateStr].meetingMinutes !== undefined) {
+          meetingMins = cfg.customDays[dateStr].meetingMinutes;
+        }
+
+        if (shift === 'DAY' || shift === 'ALL' || shift === 'NIGHT') totalMeetingMins += meetingMins;
+
+        let dailyLabel = '';
+        if (!holiday) {
+          if (shift === 'DAY') { weekdayRawWorkHours += 9; dailyLabel = '주 9h'; }
+          else if (shift === 'ALL') { weekdayRawWorkHours += 24; totalNightHours += 8; dailyLabel = '올 24h'; }
+          else if (shift === 'NIGHT') { weekdayRawWorkHours += 15; totalNightHours += 8; dailyLabel = '야 15h'; }
+          else if (shift === 'VACATION') { weekdayRawWorkHours += 8; dailyLabel = '연가 8h'; }
+        } else {
+          if (shift === 'DAY') { holidayOtHours += 1; totalHolidayCount += 1; dailyLabel = '휴일+1'; }
+          else if (shift === 'ALL') { holidayOtHours += 16; totalHolidayCount += 1; totalNightHours += 8; dailyLabel = '휴일+16'; }
+          else if (shift === 'NIGHT') { holidayOtHours += 15; totalNightHours += 8; dailyLabel = '야 15h'; }
+          else if (shift === 'VACATION') { weekdayRawWorkHours += 8; dailyLabel = '연가 8h'; }
+        }
+
+        const tile = document.createElement('div');
+        tile.className = `h-14 p-1 rounded-lg border flex flex-col justify-between cursor-pointer text-center bg-white hover:border-blue-400 transition ${dateStr === todayStr ? 'border-blue-500 ring-2 ring-blue-300' : 'border-slate-200'}`;
+        let badgeClass = 'badge-shift-off';
+        if (shift === 'DAY') badgeClass = 'badge-shift-day';
+        else if (shift === 'ALL') badgeClass = 'badge-shift-all';
+        else if (shift === 'NIGHT') badgeClass = 'badge-shift-night';
+        else if (shift === 'VACATION') badgeClass = 'badge-shift-vacation';
+
+        tile.innerHTML = `
+          <div class="flex justify-between text-[10px] leading-none">
+            <span class="${dayOfWeek===0||PUBLIC_HOLIDAYS[dateStr]?'text-rose-600 font-bold':dayOfWeek===6?'text-blue-600 font-bold':'text-slate-800'}">${day}</span>
+            ${meetingMins > 0 ? `<span class="text-[9px] text-amber-700 font-bold">${meetingMins}m</span>` : ''}
+          </div>
+          <span class="text-[9px] font-bold px-1 rounded ${badgeClass}">${SHIFT_NAMES[shift]||shift}</span>
+          <div class="text-[8px] text-slate-400 truncate">${dailyLabel}</div>
+        `;
+        tile.onclick = () => openShiftDayModal(dateStr, shift, meetingMins);
+        grid.appendChild(tile);
+      }
+
+      const legalHours = weekdayLegalDays * 8;
+      const weekdayNetOt = Math.max(0, weekdayRawWorkHours - legalHours);
+      const meetingEarned = Math.floor(totalMeetingMins / 60);
+      const totalOt = weekdayNetOt + holidayOtHours + meetingEarned;
+
+      const sumOtPay = totalOt * cfg.rateOt;
+      const sumNightPay = totalNightHours * cfg.rateNight;
+      const sumHolidayPay = totalHolidayCount * cfg.rateHoliday;
+
+      document.getElementById('shiftBaseOtHours').innerText = `${weekdayNetOt + holidayOtHours}시간`;
+      document.getElementById('shiftMeetingDetailLabel').innerText = `(${totalMeetingMins}분 적립)`;
+      document.getElementById('shiftMeetingOtHours').innerText = `+${meetingEarned}시간`;
+      document.getElementById('shiftNetOtHours').innerText = `${totalOt}시간`;
+      document.getElementById('shiftSumOtHours').innerText = `${totalOt}h`;
+      document.getElementById('shiftSumOtPay').innerText = `${sumOtPay.toLocaleString()}원`;
+      document.getElementById('shiftSumNightHours').innerText = `${totalNightHours}h`;
+      document.getElementById('shiftSumNightPay').innerText = `${sumNightPay.toLocaleString()}원`;
+      document.getElementById('shiftSumHolidayCount').innerText = `${totalHolidayCount}일`;
+      document.getElementById('shiftSumHolidayPay').innerText = `${sumHolidayPay.toLocaleString()}원`;
+      document.getElementById('shiftTotalAmount').innerText = `${(sumOtPay + sumNightPay + sumHolidayPay).toLocaleString()}원`;
+    }
+
+    function openShiftSettingsModal() {
+      const cfg = master.shiftState;
+      document.getElementById('inputRateOt').value = cfg.rateOt;
+      document.getElementById('inputRateNight').value = cfg.rateNight;
+      document.getElementById('inputRateHoliday').value = cfg.rateHoliday;
+      document.getElementById('shiftSettingsModal').classList.remove('hidden');
+    }
+
+    function closeShiftSettingsModal() {
+      document.getElementById('shiftSettingsModal').classList.add('hidden');
+    }
+
+    function saveShiftRates() {
+      const ot = parseInt(document.getElementById('inputRateOt').value, 10) || 12368;
+      const night = parseInt(document.getElementById('inputRateNight').value, 10) || 4123;
+      const hol = parseInt(document.getElementById('inputRateHoliday').value, 10) || 99422;
+
+      master.shiftState.rateOt = ot;
+      master.shiftState.rateNight = night;
+      master.shiftState.rateHoliday = hol;
+      saveMaster();
+      closeShiftSettingsModal();
+      renderShift();
+      alert('수당 단가가 성공적으로 수정되었습니다.');
+    }
+
+    function openShiftDayModal(dateStr, shift, meetingMins) {
+      currentModalDateStr = dateStr;
+      tempModalShift = shift;
+      document.getElementById('shiftModalDateTitle').innerText = `${dateStr} 설정`;
+      document.getElementById('shiftModalMeetingInput').value = meetingMins;
+      document.getElementById('shiftDayModal').classList.remove('hidden');
+    }
+
+    function closeShiftDayModal() {
+      document.getElementById('shiftDayModal').classList.add('hidden');
+    }
+
+    function setModalShift(shift) {
+      tempModalShift = shift;
+      if (shift === 'OFF' || shift === 'VACATION') {
+        document.getElementById('shiftModalMeetingInput').value = 0;
+      } else {
+        if (parseInt(document.getElementById('shiftModalMeetingInput').value, 10) === 0) {
+          document.getElementById('shiftModalMeetingInput').value = 20;
+        }
+      }
+    }
+
+    function adjustMeetingMinutes(delta) {
+      const inp = document.getElementById('shiftModalMeetingInput');
+      let val = (parseInt(inp.value, 10) || 0) + delta;
+      if (val < 0) val = 0;
+      inp.value = val;
+    }
+
+    function saveShiftDayModal() {
+      if (!currentModalDateStr) return;
+      const meetingMins = parseInt(document.getElementById('shiftModalMeetingInput').value, 10) || 0;
+      if (!master.shiftState.customDays) master.shiftState.customDays = {};
+      master.shiftState.customDays[currentModalDateStr] = {
+        shift: tempModalShift,
+        meetingMinutes: meetingMins
+      };
+      saveMaster();
+      closeShiftDayModal();
+      renderShift();
+    }
+
+    function resetModalShiftToCycle() {
+      if (!currentModalDateStr) return;
+      if (master.shiftState.customDays && master.shiftState.customDays[currentModalDateStr]) {
+        delete master.shiftState.customDays[currentModalDateStr];
+        saveMaster();
+      }
+      closeShiftDayModal();
+      renderShift();
+    }
+
+    function changeShiftMonth(d) {
+      shiftMonth += d;
+      if (shiftMonth < 0) { shiftMonth = 11; shiftYear--; }
+      else if (shiftMonth > 11) { shiftMonth = 0; shiftYear++; }
+      renderShift();
+    }
+    function goToShiftToday() {
+      const now = new Date();
+      shiftYear = now.getFullYear();
+      shiftMonth = now.getMonth();
+      renderShift();
+    }
+
+    // -------------------------------------------------------------
+    // 4. 카드 관리 (일자별 출금 먼저 표출)
+    // -------------------------------------------------------------
+    let currentCardView = 'daywise'; // 기본 뷰: 일자별 출금 먼저 표출
+
+    function switchCardViewMode(mode) {
+      currentCardView = mode;
+      const btnC = document.getElementById('btnCardwiseView');
+      const btnD = document.getElementById('btnDaywiseView');
+      const boxC = document.getElementById('cardwiseContainer');
+      const boxD = document.getElementById('daywiseContainer');
+
+      if (mode === 'daywise') {
+        btnD.className = 'px-3 py-1.5 bg-blue-600 text-white rounded-lg shadow-sm';
+        btnC.className = 'px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg';
+        boxD.classList.remove('hidden');
+        boxC.classList.add('hidden');
+      } else {
+        btnD.className = 'px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg';
+        btnC.className = 'px-3 py-1.5 bg-blue-600 text-white rounded-lg shadow-sm';
+        boxD.classList.add('hidden');
+        boxC.classList.remove('hidden');
+      }
+      renderCardsModule();
+    }
+
+    function renderCardsModule() {
+      const c = master.cards;
+
+      // 1) 일자별 순차 뷰 (기본 표출)
+      const daywiseList = document.getElementById("daywiseScheduleList");
+      const sortedByDay = [...c.schedule].sort((a, b) => a.day - b.day);
+      daywiseList.innerHTML = sortedByDay.map(it => `
+        <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 hover:bg-slate-50 transition">
+          <label class="flex items-center gap-2.5 cursor-pointer flex-1">
+            <input type="checkbox" ${it.checked ? 'checked' : ''} onchange="toggleScheduleCheck(${it.id})" class="w-4 h-4 rounded text-blue-600">
+            <div>
+              <div class="text-xs font-bold ${it.checked ? 'line-through text-slate-400' : 'text-slate-800'}">
+                <span class="text-blue-600 font-extrabold">[매월 ${it.day}일]</span> [${it.cardGroup || '일반'}] ${it.name}
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5">${it.detail}</div>
+            </div>
+          </label>
+          <div class="flex gap-2">
+            <button onclick="openEditScheduleModal(${it.id})" class="text-blue-600 text-xs hover:underline font-semibold">수정</button>
+            <button onclick="deleteScheduleItemById(${it.id})" class="text-rose-600 text-xs hover:underline font-semibold">삭제</button>
+          </div>
+        </div>
+      `).join("");
+
+      // 2) 카드/수단별 그룹 뷰
+      const cardwiseBox = document.getElementById("cardwiseContainer");
+      cardwiseBox.innerHTML = '';
+
+      const grouped = {};
+      c.schedule.forEach(item => {
+        const grp = item.cardGroup || "기타/계좌";
+        if (!grouped[grp]) grouped[grp] = [];
+        grouped[grp].push(item);
+      });
+
+      Object.entries(grouped).forEach(([groupName, items]) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2.5";
+        
+        const listHtml = items.map(it => `
+          <div class="flex items-center justify-between p-2 rounded-lg border border-slate-100 hover:bg-slate-50 transition">
+            <label class="flex items-center gap-2.5 cursor-pointer flex-1">
+              <input type="checkbox" ${it.checked ? 'checked' : ''} onchange="toggleScheduleCheck(${it.id})" class="w-4 h-4 rounded text-blue-600">
+              <div>
+                <span class="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded mr-1">매월 ${it.day}일</span>
+                <span class="text-xs font-bold ${it.checked ? 'line-through text-slate-400' : 'text-slate-800'}">${it.name}</span>
+                <div class="text-[11px] text-slate-500 mt-0.5">${it.detail}</div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="openEditScheduleModal(${it.id})" class="text-blue-600 text-xs hover:underline font-semibold">수정</button>
+              <button onclick="deleteScheduleItemById(${it.id})" class="text-rose-600 text-xs hover:underline font-semibold">삭제</button>
+            </div>
+          </div>
+        `).join("");
+
+        cardEl.innerHTML = `
+          <div class="font-bold text-xs text-slate-800 border-b pb-1.5 flex justify-between items-center">
+            <span>💳 ${groupName}</span>
+            <span class="text-[11px] text-slate-400">${items.length}건 등록</span>
+          </div>
+          <div class="space-y-1.5">${listHtml}</div>
+        `;
+        cardwiseBox.appendChild(cardEl);
+      });
+
+      // 3) 짭모아 70회
+      let totalSplit = 0;
+      const splitList = document.getElementById("splitListContainer");
+      splitList.innerHTML = c.splitTargets.map(t => {
+        const checkedCount = (t.checkedList || []).filter(Boolean).length;
+        totalSplit += checkedCount;
+        let boxes = '';
+        for (let i = 0; i < t.count; i++) {
+          const isDone = !!(t.checkedList && t.checkedList[i]);
+          boxes += `
+            <div onclick="toggleSplitBox('${t.id}', ${i})" class="w-8 h-8 rounded border flex flex-col items-center justify-center text-[10px] cursor-pointer transition ${isDone ? 'bg-amber-300 font-bold border-amber-400 text-amber-900' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}">
+              <span>${isDone ? '✓' : (i+1)}</span>
+            </div>
+          `;
+        }
+        return `
+          <div class="p-3 rounded-lg border border-slate-200">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-bold text-slate-800">${t.name}</span>
+              <span class="text-xs font-bold text-rose-600">${checkedCount} / ${t.count}회</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mb-2">${t.detail}</div>
+            <div class="flex flex-wrap gap-1">${boxes}</div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("splitCurrentCnt").innerText = totalSplit;
+      const pct = Math.min(100, Math.round((totalSplit / 70) * 100));
+      document.getElementById("splitPercentVal").innerText = pct;
+      document.getElementById("splitProgressBar").style.width = `${pct}%`;
+
+      // 4) 공과금
+      const uContainer = document.getElementById("utilityListContainer");
+      uContainer.innerHTML = c.utility.map((u, idx) => `
+        <div class="p-3 rounded-lg border border-slate-200 space-y-2">
+          <div class="font-bold text-xs text-slate-800 border-b pb-1">${u.dong}</div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400">🔥 가스(㎥):</span>
+              <input class="w-full border rounded p-1 text-right" value="${u.gasUsage}" onblur="updateUtil(${idx},'gasUsage',this.value)">
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400">가스요금(원):</span>
+              <input class="w-full border rounded p-1 text-right" value="${u.gasCost}" onblur="updateUtil(${idx},'gasCost',this.value)">
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400">⚡ 전기(kWh):</span>
+              <input class="w-full border rounded p-1 text-right" value="${u.elecUsage}" onblur="updateUtil(${idx},'elecUsage',this.value)">
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400">전기요금(원):</span>
+              <input class="w-full border rounded p-1 text-right" value="${u.elecCost}" onblur="updateUtil(${idx},'elecCost',this.value)">
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function toggleScheduleCheck(id) {
+      const it = master.cards.schedule.find(x => x.id === id);
+      if (it) { it.checked = !it.checked; saveMaster(); renderCardsModule(); }
+    }
+    function resetScheduleChecks() {
+      if (confirm('이번 달 일자별 체크와 짭모아 70회를 모두 초기화하시겠습니까?')) {
+        master.cards.schedule.forEach(s => s.checked = false);
+        master.cards.splitTargets.forEach(t => t.checkedList = []);
+        saveMaster(); renderCardsModule();
+      }
+    }
+
+    function openAddScheduleModal() {
+      document.getElementById('cardScheduleModalTitle').innerText = '새 카드/출금 일정 추가';
+      document.getElementById('cardEditScheduleId').value = '';
+      document.getElementById('cardInputDay').value = '1';
+      document.getElementById('cardInputGroup').value = '신한 짭모아';
+      document.getElementById('cardInputName').value = '';
+      document.getElementById('cardInputDetail').value = '';
+      document.getElementById('cardScheduleModal').classList.remove('hidden');
+    }
+
+    function openEditScheduleModal(id) {
+      const it = master.cards.schedule.find(x => x.id === id);
+      if (!it) return;
+      document.getElementById('cardScheduleModalTitle').innerText = '카드/출금 일정 수정';
+      document.getElementById('cardEditScheduleId').value = it.id;
+      document.getElementById('cardInputDay').value = it.day;
+      document.getElementById('cardInputGroup').value = it.cardGroup || '';
+      document.getElementById('cardInputName').value = it.name;
+      document.getElementById('cardInputDetail').value = it.detail;
+      document.getElementById('cardScheduleModal').classList.remove('hidden');
+    }
+
+    function closeCardScheduleModal() {
+      document.getElementById('cardScheduleModal').classList.add('hidden');
+    }
+
+    function saveCardScheduleItem() {
+      const editId = document.getElementById('cardEditScheduleId').value;
+      const day = parseInt(document.getElementById('cardInputDay').value, 10);
+      const cardGroup = document.getElementById('cardInputGroup').value.trim() || '일반';
+      const name = document.getElementById('cardInputName').value.trim();
+      const detail = document.getElementById('cardInputDetail').value.trim();
+
+      if (!day || !name) return alert('결제일과 항목명을 입력해주세요.');
+
+      if (editId) {
+        const it = master.cards.schedule.find(x => x.id === parseInt(editId, 10));
+        if (it) {
+          it.day = day;
+          it.cardGroup = cardGroup;
+          it.name = name;
+          it.detail = detail;
+        }
+      } else {
+        master.cards.schedule.push({
+          id: Date.now(),
+          day,
+          cardGroup,
+          name,
+          detail,
+          checked: false
+        });
+      }
+
+      saveMaster();
+      closeCardScheduleModal();
+      renderCardsModule();
+    }
+
+    function deleteScheduleItemById(id) {
+      if (confirm('해당 일정을 삭제하시겠습니까?')) {
+        master.cards.schedule = master.cards.schedule.filter(x => x.id !== id);
+        saveMaster(); renderCardsModule();
+      }
+    }
+    function toggleSplitBox(tid, idx) {
+      const t = master.cards.splitTargets.find(x => x.id === tid);
+      if (t) {
+        if (!t.checkedList) t.checkedList = [];
+        t.checkedList[idx] = !t.checkedList[idx];
+        saveMaster(); renderCardsModule();
+      }
+    }
+    function updateUtil(idx, key, val) { master.cards.utility[idx][key] = val.trim(); saveMaster(); }
+
+    // -------------------------------------------------------------
+    // 5. 정기 고정비 및 만기일정 관리
+    // -------------------------------------------------------------
+    function renderFixedList() {
+      const q = (document.getElementById("fixedSearchInput").value || "").toLowerCase();
+      const container = document.getElementById("fixedListContainer");
+      container.innerHTML = master.fixedItems.filter(it => it.title.toLowerCase().includes(q) || it.note.toLowerCase().includes(q)).map((it, idx) => `
+        <div class="p-3.5 bg-white rounded-xl border border-slate-200 shadow-sm border-l-4 border-blue-600 space-y-1.5">
+          <div class="flex justify-between items-center font-bold text-xs">
+            <span class="text-slate-800">${it.title}</span>
+            <span class="text-blue-700">${it.cost}</span>
+          </div>
+          <div class="text-[11px] text-slate-500">예정/만기: ${it.date}</div>
+          <div class="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg">${it.note}</div>
+          <div class="flex justify-end gap-3 pt-1 text-xs">
+            <button onclick="editFixedItem(${idx})" class="text-blue-600 hover:underline">수정</button>
+            <button onclick="deleteFixedItem(${idx})" class="text-rose-600 hover:underline">삭제</button>
+          </div>
+        </div>
+      `).join("");
+    }
+    function openAddFixedModal() {
+      const title = prompt("항목명을 입력하세요:");
+      if (!title) return;
+      const cost = prompt("이용료/금액을 입력하세요:", "-");
+      const date = prompt("종료/예정일자 (예: 26.10.15):", "");
+      const note = prompt("비고 내용을 입력하세요:", "");
+      master.fixedItems.unshift({ title, cost, date, note });
+      saveMaster(); renderFixedList();
+    }
+    function editFixedItem(idx) {
+      const it = master.fixedItems[idx];
+      const title = prompt("항목명 수정:", it.title);
+      if (!title) return;
+      const cost = prompt("금액 수정:", it.cost);
+      const date = prompt("일자 수정:", it.date);
+      const note = prompt("비고 수정:", it.note);
+      master.fixedItems[idx] = { title, cost, date, note };
+      saveMaster(); renderFixedList();
+    }
+    function deleteFixedItem(idx) {
+      if (confirm('해당 항목을 삭제하시겠습니까?')) { master.fixedItems.splice(idx, 1); saveMaster(); renderFixedList(); }
+    }
+
+    // -------------------------------------------------------------
+    // 6. 성경 일독 모듈
+    // -------------------------------------------------------------
+    const OT_DATA = [{n:"창세기",c:50},{n:"출애굽기",c:40},{n:"레위기",c:27},{n:"민수기",c:36},{n:"신명기",c:34},{n:"여호수아",c:24},{n:"사사기",c:21},{n:"룻기",c:4},{n:"사무엘상",c:31},{n:"사무엘하",c:24},{n:"열왕기상",c:22},{n:"열왕기하",c:25},{n:"역대상",c:29},{n:"역대하",c:36},{n:"에스라",c:10},{n:"느헤미야",c:13},{n:"에스더",c:10},{n:"욥기",c:42},{n:"시편",c:150},{n:"잠언",c:31},{n:"전도서",c:12},{n:"아가",c:8},{n:"이사야",c:66},{n:"예레미야",c:52},{n:"예레미야애가",c:5},{n:"에스겔",c:48},{n:"다니엘",c:12},{n:"호세아",c:14},{n:"요엘",c:3},{n:"아모스",c:9},{n:"오바댜",c:1},{n:"요나",c:4},{n:"미가",c:7},{n:"나훔",c:3},{n:"하박국",c:3},{n:"스바냐",c:3},{n:"학개",c:2},{n:"스가랴",c:14},{n:"말라기",c:4}];
+    const NT_DATA = [{n:"마태복음",c:28},{n:"마가복음",c:16},{n:"누가복음",c:24},{n:"요한복음",c:21},{n:"사도행전",c:28},{n:"로마서",c:16},{n:"고린도전서",c:16},{n:"고린도후서",c:13},{n:"갈라디아서",c:6},{n:"에베소서",c:6},{n:"빌립보서",c:4},{n:"골로새서",c:4},{n:"데살로니가전서",c:5},{n:"데살로니가후서",c:3},{n:"디모데전서",c:6},{n:"디모데후서",c:4},{n:"디도서",c:3},{n:"빌레몬서",c:1},{n:"히브리서",c:13},{n:"야고보서",c:5},{n:"베드로전서",c:5},{n:"베드로후서",c:3},{n:"요한일서",c:5},{n:"요한이서",c:1},{n:"요한삼서",c:1},{n:"유다서",c:1},{n:"요한계시록",c:22}];
+    function flatten(data){ let l=[]; data.forEach(b=>{ for(let i=1;i<=b.c;i++) l.push(`${b.n} ${i}장`); }); return l; }
+    const ALL_OT = flatten(OT_DATA); const ALL_NT = flatten(NT_DATA);
+    const BASE_OT_START = ALL_OT.indexOf("예레미야애가 3장");
+    const BASE_NT_START = ALL_NT.indexOf("마태복음 6장");
+    let bibleDate = new Date("2026-09-14T00:00:00");
+
+    function renderBible() {
+      const y = bibleDate.getFullYear(), m = String(bibleDate.getMonth() + 1).padStart(2, '0'), d = String(bibleDate.getDate()).padStart(2, '0');
+      const dateKey = `${y}-${m}-${d}`;
+      const diff = Math.floor((Date.UTC(y, bibleDate.getMonth(), bibleDate.getDate()) - Date.UTC(2026, 8, 14)) / (24*3600*1000));
+      const dayIdx = diff >= 0 ? diff : 0;
+      const otIdx = BASE_OT_START + (dayIdx * 3);
+      const ntIdx = BASE_NT_START + dayIdx;
+
+      const dayChecks = master.bible.history[dateKey] || { ot: [false,false,false], nt: [false] };
+      document.getElementById('bibleDateLabel').innerText = `${dateKey}`;
+
+      const otEl = document.getElementById('bibleOtList'); otEl.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        const label = ALL_OT[(otIdx + i) % ALL_OT.length];
+        otEl.innerHTML += `
+          <div class="flex items-center justify-between text-xs p-2 border rounded-lg">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" ${dayChecks.ot[i] ? 'checked' : ''} onchange="setBibleChk('${dateKey}','ot',${i},this.checked)" class="w-4 h-4 rounded text-blue-600">
+              <span class="${dayChecks.ot[i] ? 'line-through text-slate-400' : 'font-bold text-slate-700'}">${label}</span>
+            </label>
+            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(label+' 낭독')}" target="_blank" class="text-[11px] text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 hover:bg-rose-100">▶ 듣기</a>
+          </div>
+        `;
+      }
+
+      const ntEl = document.getElementById('bibleNtList'); ntEl.innerHTML = '';
+      const ntLabel = ALL_NT[ntIdx % ALL_NT.length];
+      ntEl.innerHTML = `
+        <div class="flex items-center justify-between text-xs p-2 border rounded-lg">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" ${dayChecks.nt[0] ? 'checked' : ''} onchange="setBibleChk('${dateKey}','nt',0,this.checked)" class="w-4 h-4 rounded text-blue-600">
+            <span class="${dayChecks.nt[0] ? 'line-through text-slate-400' : 'font-bold text-slate-700'}">${ntLabel}</span>
+          </label>
+          <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(ntLabel+' 낭독')}" target="_blank" class="text-[11px] text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 hover:bg-rose-100">▶ 듣기</a>
+        </div>
+      `;
+
+      document.getElementById('bibleOtRange').innerText = `총 929장 중 ${(otIdx % ALL_OT.length) + 1}~${((otIdx + 2) % ALL_OT.length) + 1}장`;
+      document.getElementById('bibleNtRange').innerText = `총 260장 중 ${(ntIdx % ALL_NT.length) + 1}장`;
+      document.getElementById('bibleInfoStats').innerText = `진행: ${dayIdx + 1}일차`;
+    }
+
+    function setBibleChk(dk, type, idx, val) {
+      if (!master.bible.history[dk]) master.bible.history[dk] = { ot: [false,false,false], nt: [false] };
+      master.bible.history[dk][type][idx] = val;
+      saveMaster(); renderBible();
+    }
+    function toggleAllBibleToday() {
+      const y = bibleDate.getFullYear(), m = String(bibleDate.getMonth() + 1).padStart(2, '0'), d = String(bibleDate.getDate()).padStart(2, '0');
+      const dk = `${y}-${m}-${d}`;
+      const c = master.bible.history[dk] || { ot: [false,false,false], nt: [false] };
+      const all = c.ot.every(Boolean) && c.nt.every(Boolean);
+      master.bible.history[dk] = { ot: [!all, !all, !all], nt: [!all] };
+      saveMaster(); renderBible();
+    }
+    function changeBibleDay(d) { bibleDate.setDate(bibleDate.getDate() + d); renderBible(); }
+
+    // -------------------------------------------------------------
+    // 7. 가족 보험 모듈
+    // -------------------------------------------------------------
+    let currentInsFilter = '전체';
+
+    function filterInsurance(member) {
+      currentInsFilter = member;
+      document.querySelectorAll('#insuranceTabs button').forEach(b => {
+        if (b.innerText === member) {
+          b.className = 'px-3 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white';
+        } else {
+          b.className = 'px-3 py-1.5 rounded-full text-xs font-semibold bg-white border text-slate-600';
+        }
+      });
+
+      const container = document.getElementById("insuranceCards");
+      container.innerHTML = master.insurance.map((it, idx) => {
+        if (member !== '전체' && it.name !== member) return '';
+        return `
+          <div class="p-3.5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-blue-700">${it.name}</span>
+                <span class="text-[11px] font-bold px-2 py-0.5 bg-blue-50 text-blue-800 rounded">${it.type}</span>
+              </div>
+            </div>
+            <div class="font-bold text-xs text-slate-800">${it.title}</div>
+            <div class="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg flex justify-between items-center">
+              <span>증권번호: <b>${it.policyNo}</b></span>
+              <button class="text-blue-600 font-bold hover:underline text-xs" onclick="navigator.clipboard.writeText('${it.policyNo}'); alert('증권번호가 복사되었습니다.');">복사</button>
+            </div>
+            <div class="text-[11px] text-slate-400">${it.dates}</div>
+            <ul class="text-xs text-slate-600 list-disc pl-4 space-y-0.5">
+              ${it.details.map(d => `<li>${d}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 초기 기동 (성경일독 탭 기본 렌더링)
+    window.addEventListener('DOMContentLoaded', () => {
+      renderBible();
+      renderFinance();
+      renderKids();
+      renderCardsModule();
+      renderShift();
+      renderFixedList();
+      filterInsurance('전체');
+    });
+  </script>
+</body>
+</html>
